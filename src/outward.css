@@ -1,0 +1,57 @@
+/* outward.css */
+.list-item {
+    font-size: 16px;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+  
+  body {
+    background-color: lightcyan;
+    color: #333;
+  }
+  
+  .App {
+    font-family: sans-serif;
+    text-align: center;
+  }
+
+  .sortable-list {
+    width: 200px;
+    padding: 12px;
+    background-color: #f2f2f2;
+    border-radius: 4px;
+  }
+  
+  .sortable-card {
+    padding: 10px;
+    margin-bottom: 12px;
+    background-color: #f8f8f8;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  }
+  
+  .sortable-card:hover {
+    cursor: move;
+    background-color: #fff;
+  }
+  
+  .sortable-card:last-child {
+    margin-bottom: 0;
+  }
+  
+  .sortable-card .card-title {
+    font-weight: bold;
+  }
+  
+  .sortable-card .card-description {
+    margin-top: 4.5px;
+    color: #888;
+    
+  }
+
+  .add-card-button {
+    border-radius: 4px;
+    outline: none;
+  }
