@@ -1,0 +1,36 @@
+ /* CardStyles.css */
+.card-container {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    overflow-x: auto;
+    grid-auto-flow: column;
+    gap: 20px;
+  }
+ 
+  .card {
+    width: 100px;
+    height: 80px;
+  }
+ 
+  /* custom-semantic.css */
+  .ui.cards {
+    display: block;
+    margin: 0;
+    /* 添加其他覆蓋的樣式 */
+  }
+ 
+  /* 使用更具體的選擇器 */
+  .custom-card-group {
+   
+    
+    overflow-y: auto;
+  }
+
+  /* CardStyles.css */
+.custom-segment {
+  height: 95%; /* 設定固定高度 */
+  width: 350px;
+  overflow-y: auto; /* 啟用垂直滾動 */
+  /* 添加其他自定義樣式 */
+}
