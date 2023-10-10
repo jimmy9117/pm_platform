@@ -4,7 +4,7 @@ import Workspace from "../components/Workspace";
 import firebase from "../utils/firebase";
 import { useNavigate } from "react-router-dom";
 import "firebase/auth";
-
+import Canbanpage from"./Canbanpage";
 function Home(){
     const navigate = useNavigate();
     const [openworkspace, setOpenWorksapce] = useState(false);//工作區
@@ -49,6 +49,10 @@ function Home(){
       navigate("/Canbanpage");
     };
 
+    const data = {
+      clickcanbanid: 'Fr94UEWPwpYy5lWDSfGY', // 假設這是您的數據
+    };
+    
     // const handleAddKanban = (id) => {
     //   setOpenKanban(true);
     //   console.log('點擊的文件 id:', id);
@@ -242,6 +246,7 @@ function Home(){
         {/* 預設切成16等份 */}
         <Grid.Row>
         <Grid.Column width={3}>左空白</Grid.Column>
+       
             <Grid.Column width={2}>
                 <List animated selection>
                     <List.Item >
@@ -297,12 +302,9 @@ function Home(){
               </div>
             ))}
 
-
-
-
             </Grid.Column>
-            <Grid.Column width={3}>又空白
-            <div>
+            <Grid.Column width={3}>右空白
+            {/* <div>
                 {canbandata.map((post) => (
                     <div key={post.id}>
                         {post.canbanname}
@@ -315,7 +317,7 @@ function Home(){
                         {post.workspacename}
                     </div>
                 ))}
-                </div>
+                </div> */}
             </Grid.Column>
         </Grid.Row>
         {/* 工作區 */}

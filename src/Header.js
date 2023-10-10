@@ -7,7 +7,7 @@ import Web3 from 'web3';
 import "firebase/auth";
 
 
-function Header(props) {
+function Header() {
   const [user, setUser] = React.useState("");
   const [walletAddress, setWalletAddress] = React.useState("");
   const [isLoadings, setIsLoadings] = React.useState(false);
@@ -124,11 +124,10 @@ function Header(props) {
       <Menu.Menu position="left">
         {user ? (
           <>
-            <Menu.Item onClick={props.handleIconClick}>漢堡</Menu.Item>
             <Menu.Item as={Link} to="/home">
              pm_manager
             </Menu.Item>
-            <Menu.Item>工作區</Menu.Item>
+            <Menu.Item as={Link} to="/SortableTest">拖曳測試</Menu.Item>
             <Menu.Item as={Link} to="/TestContract">智能合約範例</Menu.Item>
             <Menu.Item as={Link} >
               <Popup

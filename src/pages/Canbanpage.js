@@ -112,7 +112,7 @@ function List8() {
 
 
 function Canbanpage(props) {
-  const { clickcanbanid } = props;
+  const { data } = props;
   const [visible, setVisible] = React.useState(false);
 
 
@@ -126,7 +126,7 @@ function Canbanpage(props) {
 
 
   const handleAddList =() =>{
-    console.log("clickcanbanid 值是：", clickcanbanid);
+    console.log("clickcanbanid 值是：", data);
   };
  
   return (
