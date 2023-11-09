@@ -13,15 +13,9 @@ import SortableTest from './pages/SortableTest';
 import './App.css';
 
 function App() {
-  const [sidebarVisible, setSidebarVisible] = useState(false);
-
-  const handleIconClick = () => {
-    setSidebarVisible(!sidebarVisible) ;
-  };
-
   return (
     <BrowserRouter>
-      <Header handleIconClick={handleIconClick} />
+      <Header />
       <Routes>
         <Route path="/" element={<Frontpage />} exact />
         <Route path="/home" element={<Home />} exact />
@@ -29,8 +23,6 @@ function App() {
         <Route path="/TestContract" element={<TestContract />} exact />
         <Route path="/Canbanpage" element={<Canbanpage/>} exact/> 
         <Route path="/SortableTest" element={<SortableTest/>} exact/> 
-
-
       </Routes>   
     </BrowserRouter>
   );

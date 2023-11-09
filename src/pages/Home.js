@@ -1,8 +1,8 @@
 import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import { Grid, List,Divider,Button,Icon,Modal,Header, Form } from "semantic-ui-react";
 import Workspace from "../components/Workspace";
 import firebase from "../utils/firebase";
-import { useNavigate } from "react-router-dom";
 import "firebase/auth";
 import Canbanpage from"./Canbanpage";
 function Home(){
@@ -43,20 +43,21 @@ function Home(){
     //選取看板處理 
     const handleSelectCanban = (item) =>{
       console.log("點選到看板id",item.id);
-      console.log("點選到看板name",item.canbanname);
-      setclickcanbanid(item.id);
-      console.log("點選的看板ID:",clickcanbanid);
-      navigate("/Canbanpage");
-    };
+      console.log("獲取到workspaceid",item.workspaceId);
 
-    const data = {
-      clickcanbanid: 'Fr94UEWPwpYy5lWDSfGY', // 假設這是您的數據
+      console.log("點選到看板name",item.canbanname);
+      // setclickcanbanid(item.id);
+      // console.log("點選的看板ID:",clickcanbanid);
+
+      // 創建要傳遞的數據對象
+      const data = {
+        clickcanbanid: item.id,
+        clickworkspaceid: item.workspaceId,
+      };
+
+      // 導航到 Canbanpage 並傳遞數據
+      navigate('/Canbanpage', { state: { data } });
     };
-    
-    // const handleAddKanban = (id) => {
-    //   setOpenKanban(true);
-    //   console.log('點擊的文件 id:', id);
-    // };
 
     const handleKanbanclick = (id)=>{
       console.log('點擊的文件 id:', id);
@@ -87,7 +88,6 @@ function Home(){
       value: permissions.name
     })) : [];
     
-
     const user = firebase.auth().currentUser;
 
     //抓取worktopics 
@@ -146,10 +146,11 @@ function Home(){
         .firestore()
         .collection('workspace')
         .where('author.uid', '==', user.uid);
-  
+        
       const unsubscribe = query.onSnapshot((querySnapshot) => {
         const promises = querySnapshot.docs.map((docSnapshot) => {
           const id = docSnapshot.id;
+        
           const subcollectionQuery = firebase
             .firestore()
             .collection('workspace')
@@ -171,6 +172,7 @@ function Home(){
   
               return [...prevData, ...newData];
             });
+            console.log("看板資料:",canbandata);
           });
         });
       });
@@ -179,9 +181,6 @@ function Home(){
       };
     }, []);
   
-    
-    
-    
     React.useEffect(() => {
       console.log("canbandata 狀態變化:", canbandata);
       // 在這裡處理你希望在 canbandata 變化時執行的操作
@@ -246,7 +245,6 @@ function Home(){
         {/* 預設切成16等份 */}
         <Grid.Row>
         <Grid.Column width={3}>左空白</Grid.Column>
-       
             <Grid.Column width={2}>
                 <List animated selection>
                     <List.Item >

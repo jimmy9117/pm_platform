@@ -1,31 +1,34 @@
  /* CardStyles.css */
 .card-container {
     width: 100%;
-    height: 100%;
+    height: 95%;
     display: grid;
     overflow-x: auto;
     grid-auto-flow: column;
     gap: 20px;
+    /* 添加一个2px宽的黑色边框 */
+    /* border: 2px solid #000;  */
+    padding: 10px; /* 为了更好的外观，你可以添加内边距 */
   }
  
-  .card {
-    width: 100px;
-    height: 80px;
+  .ui.card > .content, .ui.cards > .card > .content {
+    padding: 1.5em 1em; 
   }
+
+  /* .ui.card, .ui.cards {
+    margin-bottom: 20em; 
+  }
+   */
  
-  /* custom-semantic.css */
+ 
+  /* custom-semantic.css
   .ui.cards {
     display: block;
-    margin: 0;
-    /* 添加其他覆蓋的樣式 */
-  }
- 
-  /* 使用更具體的選擇器 */
-  .custom-card-group {
-   
     
-    overflow-y: auto;
-  }
+   
+   
+  } 
+
 
   /* CardStyles.css */
 .custom-segment {
@@ -33,4 +36,19 @@
   width: 350px;
   overflow-y: auto; /* 啟用垂直滾動 */
   /* 添加其他自定義樣式 */
+}
+
+.addlistButton{
+  width: 100px;
+  height: 80px;
+
+}
+
+.placeholder {
+  background-color: grey;
+  border: 2px dashed #ccc;
+  margin: 8px 0;
+  padding: 10px;
+  border-radius: 4px;
+  /* 確保佔位符的高度與卡片相同，或根據需要調整 */
 }
