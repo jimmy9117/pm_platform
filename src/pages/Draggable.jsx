@@ -12,6 +12,7 @@ export function Draggable(props) {
     isDragging, // 新增追踪拖拽狀態
   } = useDraggable({
     id: props.id,
+    
     onDragStart: (event) => {
       console.log('Drag start from Draggable component');
       if (props.onDragStart) {

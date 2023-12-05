@@ -1,0 +1,115 @@
+[
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_cardName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_listId",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "_cardId",
+				"type": "string"
+			}
+		],
+		"name": "addCard",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "cardId",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "cardName",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "listId",
+				"type": "string"
+			}
+		],
+		"name": "CardAdded",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"name": "cards",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "cardName",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "listId",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "cardId",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_cardId",
+				"type": "string"
+			}
+		],
+		"name": "getCard",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "cardName",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "listId",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "cardId",
+						"type": "string"
+					}
+				],
+				"internalType": "struct CardStorage.Card",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]

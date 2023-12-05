@@ -3,8 +3,8 @@ import { Menu, Popup,Search,Button,Sidebar } from "semantic-ui-react";
 import { Link } from "react-router-dom";
 import firebase from "./utils/firebase";
 import { useNavigate } from "react-router-dom";
-import Web3 from 'web3';
-import ethers from 'ethers';
+// 從 ethers 的 providers 子模塊中導入 Web3Provider
+import { Web3Provider } from '@ethersproject/providers';
 import "firebase/auth";
 
 
@@ -16,13 +16,14 @@ function Header() {
   const navigate = useNavigate();
   const db = firebase.firestore();
 
- 
   //連結錢包判斷
   const connect = async () => {
     if (typeof window.ethereum !== "undefined") {
       try {
         setIsLoadings(true);
-        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        // 使用導入的 Web3Provider
+        const provider = new Web3Provider(window.ethereum);
+        provider.getNetwork().then(network => console.log(network));
         await provider.send("eth_requestAccounts", []);
         const signer = provider.getSigner();
         const walletAddress = await signer.getAddress();
@@ -64,8 +65,6 @@ function Header() {
     }
   };
   
-
-  
   //位首次使用用戶新增資料
   async function createUserdata() {
     if (user) {
@@ -90,7 +89,6 @@ function Header() {
             displayname: "",
             uid: walletAddress,
             email: "",
-            
           },
         };
         await newUserRef.set(userData);
@@ -123,7 +121,7 @@ function Header() {
              pm_manager
             </Menu.Item>
             <Menu.Item as={Link} to="/SortableTest">拖曳測試</Menu.Item>
-            <Menu.Item as={Link} to="/TestContract">智能合約範例</Menu.Item>
+            
             <Menu.Item as={Link} >
               <Popup
                 content={

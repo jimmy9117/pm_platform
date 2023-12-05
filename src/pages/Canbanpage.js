@@ -1,6 +1,6 @@
 import React, { useState,useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Card, Grid , Sidebar, Button, Segment } from 'semantic-ui-react';
+import { Card, Grid , Sidebar, Button, Segment, Modal, Header, Form, Icon } from 'semantic-ui-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
@@ -12,6 +12,14 @@ import VerticalSidebar from '../VerticalSidebar'; // 导入 VerticalSidebar 组�
 import firebase from "../utils/firebase";
 import "firebase/auth";
 
+//Ethers.js
+import contractABI from '../contracts/CardStorage.json';
+import { Web3Provider } from '@ethersproject/providers';
+import { Contract } from 'ethers';
+import { Interface, Log } from "ethers";
+
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 function Canbanpage() {
   const location = useLocation();
@@ -26,8 +34,31 @@ function Canbanpage() {
   const [canbanid,setcanbanid] = useState("");
   const [listdata,setlistdata] = React.useState([]);
   const [carddata,setcarddata] = React.useState([]);
-  const [draggingId, setDraggingId] = useState(null);
+  const [temporaryCardData, setTemporaryCardData] = useState([...carddata]);
+  const [draggingCard, setDraggingCard] = useState(null);
+  const [draggingOverListId, setDraggingOverListId] = useState(null);
+  const [dragStartIndex,setDragStartIndex] = useState(null);
+  //點擊卡片判斷
+  const [openCard,setOpenCard] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [mouseDownTime, setMouseDownTime] = useState(0);
+  const [selectedCardId, setSelectedCardId] = useState(null);
+  const [selectedCardInfId, setSelectedCardInfId] = useState(null);
+  const [selectedListId, setSelectedListId] = useState(null);
 
+  //卡片Modal判斷
+  const [isAddingInModal, setIsAddingInModal] = useState(false);
+  const [modalInputValue, setModalInputValue] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  
+  // 初始化 ethers.js 和智能合约
+  const contractAddress = '0xA25f130124E208833F8c74DD46E82Bc8479D0018';
+  const provider = new Web3Provider(window.ethereum);
+  const signer = provider.getSigner();
+  const cardStorageContract = new Contract(contractAddress, contractABI, signer);
+  const contractInterface = new Interface(contractABI);
+
+  //dnd-kit
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -35,7 +66,7 @@ function Canbanpage() {
     })
   );
 
-  
+  //側邊攔
   const handleIconClick = () => {
     setVisible(!visible) ;
   };
@@ -74,10 +105,104 @@ function Canbanpage() {
       setIsAddingList(false);
     };
     
+    //點擊Modal描述
+    const handleCardDescribe = (CardId)=>{
+      setIsAddingInModal(true);
+    };
+
+    //確認ModalDescribe送出
+  const handleDescriptSent = (CardId) =>{
+    console.log("點擊卡片",CardId);
+
+    const cardQuery = firebase.firestore()
+      .collection("workspace").doc(workspaceid)
+      .collection("canban").doc(canbanid)
+      .collection("list").doc(selectedListId)
+      .collection("card").doc(CardId)
+      .collection("cardinf").get()
+      .then((collectionSnapshot) => {
+      if (!collectionSnapshot.empty) {
+      const cardInfId = collectionSnapshot.docs[0].id; // 获取第一个文档的 ID
+      // 使用获取到的文档 ID 更新卡片信息
+      const cardInfRef = firebase.firestore()
+        .collection("workspace").doc(workspaceid)
+        .collection("canban").doc(canbanid)
+        .collection("list").doc(selectedListId)
+        .collection("card").doc(CardId)
+        .collection("cardinf").doc(cardInfId);
+
+      cardInfRef.update({
+        describe: modalInputValue
+      })
+      .then(() => {
+        console.log("卡片描述信息已更新");
+        setIsAddingInModal(false);
+
+      })
+      .catch(error => {
+        console.error("更新卡片描述信息时出错:", error);
+      });
+    } else {
+      console.log("未找到卡片信息文档");
+    }
+  })
+    .catch(error => {
+      console.error("查询卡片信息时出错:", error);
+    });
+
+    }
+    //取消Modal描述
+    const handleCancelInModal = ()=>{
+      setIsAddingInModal(false);
+    };
+
     //取消新增卡片按鈕 
     const cancelCardNameSubmit =() =>{
       setIsAddingCard(null);
     };
+
+    //保存日期
+    const handleSaveDate = () =>{
+      console.log("");
+      if (!selectedDate) {
+        alert("请先选择一个日期。");
+        return;
+      }
+      const cardQuery = firebase.firestore()
+      .collection("workspace").doc(workspaceid)
+      .collection("canban").doc(canbanid)
+      .collection("list").doc(selectedListId)
+      .collection("card").doc(selectedCardId)
+      .collection("cardinf").get()
+      .then((collectionSnapshot) => {
+      if (!collectionSnapshot.empty) {
+      const cardInfId = collectionSnapshot.docs[0].id; 
+
+      const cardInfRef = firebase.firestore()
+      .collection("workspace").doc(workspaceid)
+      .collection("canban").doc(canbanid)
+      .collection("list").doc(selectedListId)
+      .collection("card").doc(selectedCardId)
+      .collection("cardinf").doc(cardInfId);
+
+       cardInfRef.update({
+        deadline: selectedDate
+      })
+      .then(() => {
+        console.log("卡片終止日期已更新");
+       
+      })
+      .catch(error => {
+        console.error("更新卡片時間出错:", error);
+      });
+    } else {
+      console.log("未找到卡片信息文档");
+    }
+  })
+    .catch(error => {
+      console.error("查询卡片信息时出错:", error);
+    });
+}
 
     //新增列表
     const handleListNameSubmit = () => {
@@ -122,54 +247,53 @@ function Canbanpage() {
       });
     };
     
-    //新增卡片
-    const handleCardNameSubmit = (listIndex,ListId) => {
-      // console.log('clickcanbanid 值是：', canbanid);
-      // console.log('clickworkspaceid 值是：', workspaceid);
-      // console.log("listid:",ListId);
-      // 查询是否有具有相同名字的列表
-      const cardQuery = firebase
-        .firestore()
-        .collection('workspace')
-        .doc(workspaceid)
-        .collection('canban')
-        .doc(canbanid)
-        .collection('list')
-        .doc(ListId)
-        .collection('card')
-        .where('cardName','==',cardName);
-    
-      cardQuery.get().then((querySnapshot) => {
-        if (querySnapshot.empty) {
-          // 没有重复的数据，可以添加
-          // console.log('clickcanbanid 值是：', canbanid);
-          // console.log('clickworkspaceid 值是：', workspaceid);
-          // console.log('listindex 值是：', ListId);
-          setIsLoading(true);
-    
-          const doucumentRef = firebase.firestore().collection("workspace").doc(workspaceid).collection("canban").doc(canbanid).collection("list").doc(ListId).collection("card").doc();
-          doucumentRef.set({
-            ListId: ListId,
-            Cardname: cardName,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp(), // 使用 serverTimestamp
-          })
-            .then(() => {
-              setIsLoading(false);
-              console.log("成功");
-              // 添加完列表后，重置状态
-              setIsAddingList(false);
-              setcardName('');
-            })
-            .catch((error) => {
-              setIsLoading(false);
-              console.error("错误：", error);
-            });
-        } else {
-          // 有重复的数据，执行适当的操作，例如提示用户
-          console.log('已存在具有相同名字的列表。');
-        }
+
+   // 新增卡片
+    const handleCardNameSubmit = (listIndex, ListId) => {
+      setIsLoading(true);
+
+      const documentRef = firebase.firestore()
+        .collection("workspace").doc(workspaceid)
+        .collection("canban").doc(canbanid)
+        .collection("list").doc(ListId)
+        .collection("card").doc();
+
+      documentRef.set({
+        ListId: ListId,
+        Cardname: cardName,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(), // 使用 serverTimestamp
+      })
+      .then(() => {
+        const cardInfRef = firebase.firestore()
+        .collection("workspace").doc(workspaceid)
+        .collection("canban").doc(canbanid)
+        .collection("list").doc(ListId)
+        .collection("card").doc(documentRef.id)
+        .collection("cardinf").doc();
+
+        cardInfRef.set({
+          cardId:documentRef.id,
+          describe:" ",
+          deadline:" ",
+        }).then(() =>{
+          console.log("以新增卡片資訊");
+        })
+        .catch(error =>{
+          console.error("添加卡片資訊錯誤",error);
+        });
+        
+        //重製狀態
+        setIsLoading(false);
+        console.log("卡片添加成功");
+        setIsAddingList(false);
+        setcardName('');
+      })
+      .catch((error) => {
+        setIsLoading(false);
+        console.error("错误：", error);
       });
     };
+
 
     //抓取列表
     React.useEffect(() => {
@@ -259,6 +383,7 @@ function Canbanpage() {
 
     React.useEffect(() => {
       console.log("carddata 狀態變化:", carddata);
+      setTemporaryCardData(carddata);
       // 在這裡處理你希望在 canbandata 變化時執行的操作
     }, [carddata]);
     
@@ -271,58 +396,118 @@ function Canbanpage() {
       );
     };
     
+    useEffect(() => {
+      //console.log("DragStartIndex 更新為:", dragStartIndex);
+    }, [dragStartIndex]);
+    
+    //點擊卡片畫密
+    const handleCardClick = (cardId) => {
+     if (isDragging === false) {
+    console.log("点击卡片");
+    setOpenCard(true);
+  }
+    };
+
+    const handleMouseDown = () => {
+      setMouseDownTime(Date.now());
+    };
+    
+    const handleMouseUp = (cardId,listId) => {
+      if (Date.now() - mouseDownTime < 200) { // 200 毫秒内释放认为是点击
+        console.log("点击卡片",cardId);
+        setSelectedCardId(cardId);
+        setSelectedListId(listId);
+        setOpenCard(true);
+      }
+    };
+
   // 處理拖曳開始的事件
   function handleDragStart(event) {
-    console.log("handleDragStart 被調用");
+    setIsDragging(true);
     const { active } = event;
-    setDraggingId(active.id);
-    console.log("拖曳時的數值1:", active.id);
+    console.log("拖曳開始");
+    const parts = active.id.split('-'); // ['card', '123456', 'list', '654321']
+    const activeCardId = parts[1]; // 这是卡片ID '123456'
+    const activeListId = parts[3]; // 这是列表ID '654321'
+    const activeIndex = carddata.findIndex(card => card.id === activeCardId);
+    setDragStartIndex(activeIndex); 
+    setDraggingCard({ cardId: activeCardId, targetListId: activeListId });
+    //console.log("DragStartIndex:", dragStartIndex);
   }
 
   useEffect(() => {
-    console.log("拖曳時的數值:", draggingId);
-  }, [draggingId]);
+    console.log("拖曳數值:",isDragging);
+  }, [isDragging]);
+  
+  function handleDragMove(event) {
+    const { active, over } = event;
+    if (!over) return;
+
+    // 获取卡片 ID 和 列表 ID
+    const activeParts = active.id.split('-');
+    const overParts = over.id.split('-');
+    const activeCardId = activeParts[1];
+    const activeListId = activeParts[3];
+    
+    const overCardId = overParts[1];
+    const overListId = overParts[3];
+  // console.log(" activeCardId:", activeCardId); 
+  //  console.log(" activeListId:", activeListId);
+  // console.log(" overCardId:", overCardId);
+  // console.log(" overListId:", overListId);
+  
+  let overIndex;
+  const activeIndex = dragStartIndex; 
+
+  if (draggingCard) {
+    setDraggingCard(prev => ({ ...prev, targetListId: overListId }));
+  }
+  
   
 
+  if ( activeListId !== overListId) {
+    overIndex = temporaryCardData.findIndex(card => card.id === overCardId);
+    console.log("跨列表overIndex:", overIndex);
+
+  } else {
+    // 如果是在相同列表中移动，找到overCardId的索引
+    overIndex = temporaryCardData.findIndex(card => card.id === overCardId);
+    console.log("同列表overIndex:", overIndex);
+    setTemporaryCardData(prev => {
+      return arrayMove(prev, activeIndex, overIndex);
+    });
+  }
+// if (activeIndex !== overIndex) {
+//       setTemporaryCardData(prev => {
+//         const updated = [...prev];
+//         const [removed] = updated.splice(activeIndex, 1);
+//         updated.splice(overIndex, 0, removed);
+//         return updated;
+//       });
+//     }
+  
+}
+  
     // 拖曳結束處理
     function handleDragEnd(event) {
       const { active, over } = event;
+      setIsDragging(false);
+      console.log("拖曳結束");
+      if (!over) return;
     
-      // 這裡假設 active 和 over 都是形如 `card-${card.id}-list-${list.id}` 的 ID
-      if (over && active.id !== over.id) { // 確保有一個過渡區域並且不是在同一位置放下
-        // 分離 ID 來獲得卡片 ID 和列表 ID
-        const activeIds = active.id.split('-');
-        const overIds = over.id.split('-');
-        const activeCardId = activeIds[1];
-        const overCardId = overIds[1];
-        const activeListId = activeIds[3];
-        const overListId = overIds[3];
-    
-        // 確認卡片是否在同一列表中移動
-        if (activeListId === overListId) {
-          // 在列表中尋找拖曳的卡片和目標卡片的索引
-          const activeIndex = carddata.findIndex(card => card.id.toString() === activeCardId);
-          const overIndex = carddata.findIndex(card => card.id.toString() === overCardId);
-    
-          if (activeIndex !== -1 && overIndex !== -1) {
-            setcarddata((cards) => {
-              // 創建卡片的副本
-              const newCards = [...cards];
-              // 移除並保存拖曳的卡片
-              const [removed] = newCards.splice(activeIndex, 1);
-              // 將拖曳的卡片插入到目標位置
-              newCards.splice(overIndex, 0, removed);
-    
-              // 返回新的卡片數組以更新狀態
-              return newCards;
-            });
-          }
-        }
-      }
-    
-      // 無論是否重新排序，都應該重置拖曳狀態
-      setDraggingId(null);
+      const activeId = active.id.split('-')[1];
+      const overId = over.id.split('-')[1];
+      const activeIndex = carddata.findIndex(card => card.id === activeId);
+      const overIndex = carddata.findIndex(card => card.id === overId);
+      setDraggingCard(null); // 清空拖拽状态
+      // if (activeIndex !== overIndex) {
+      //   setcarddata(arrayMove(carddata, activeIndex, overIndex));
+      // }
+      setDragStartIndex(null);
+      setIsDragging(false);
+
     }
+    
     
   //更新拖曳後卡片的列表id
   //   function updateCardListId(activecardId,activeListId,overListId) {
@@ -348,9 +533,46 @@ function Canbanpage() {
   //     });
   // }
 
+
+
+//智能合約交易上鍊
+const uploadCardsToBlockchain = async () => {
+  try {
+
+    for (const card of carddata) {
+      // 手动编码调用数据
+      const data = cardStorageContract.interface.encodeFunctionData('addCard', [card.Cardname, card.ListId, card.id]);
+      console.log("卡片名字:",card.Cardname);
+      console.log("卡片片列表ID:",card.ListId);
+      console.log("卡片ID:",card.id);
+      console.log("截止時間:",selectedDate);
+      // 创建并发送交易
+      const tx = await signer.sendTransaction({
+        to: contractAddress,
+        data: data
+      });
+
+      // 等待交易被挖掘
+      const receipt = await tx.wait();
+      const returndata = receipt.transactionHash;
+      // 现在可以安全地访问 receipt 对象的属性
+      console.log("receipt回傳值:", receipt.confirmations);
+      console.log("完整訊息", receipt);
+      console.log("Transaction hash:", receipt.transactionHash);
+      console.log("Block number:", receipt.blockNumber);
+      console.log("Gas used:", receipt.gasUsed.toString());
+      console.log(`Card with ID ${card.id} added to the blockchain.`);
+      // // 使用Interface实例解码交易输入数据
+      // const parsedTransaction = contractInterface.parseTransaction({  });
+      // console.log("上鏈回傳的資料",parsedTransaction); // 输出解码后的交易数据
+    }
+  } catch (error) {
+    console.error('Error uploading cards to the blockchain:', error);
+  }
+};
+
 return (
   <>
-    
     <CanbanHeader handleIconClick={handleIconClick} />
     <Sidebar.Pushable>
       <VerticalSidebar
@@ -358,81 +580,123 @@ return (
         direction='left'
         visible={visible}
       />
-      <Sidebar.Pusher style={{ top:0, bottom: -10, height: '85vh' }}>
+      <Sidebar.Pusher style={{ top: 0, bottom: -10, height: '85vh' }}>
 
-<DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>        
-          <div className="card-container">
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragMove={handleDragMove} onDragEnd={handleDragEnd}>        
+          <SortableContext items={temporaryCardData.map((card) => `card-${card.id}`)}>
+            <div className="card-container">
             {listdata.map((list, listIndex) => (
-              <Droppable key={list.id} id={`list-${list.id}`}>
-                <Card>
-                  <Card.Content>
-                    <Card.Header>{list.Listname}</Card.Header>
-                    <SortableContext  items={carddata.filter((card) => card.ListId === list.id).map((card) => `card-${card.id}`)}>
-                    {
-                      carddata
-                        .filter((card) => card.ListId === list.id)
-                        .map((card, cardIndex) => (
-                          <React.Fragment key={card.id}>
-                            {draggingId === `card-${card.id}-list-${list.id}` ? (
-                              <Placeholder />
-                            ) : (
-                              <Draggable id={`card-${card.id}-list-${list.id}`} onDragStart={handleDragStart}>
-                                <Card>
-                                  <Card.Content>{card.Cardname}</Card.Content>
-                                </Card>
-                              </Draggable>
-                            )}
-                          </React.Fragment>
-                        ))
+              <Card key={list.id}>
+                <Card.Content>
+                  <Card.Header>{list.Listname}</Card.Header>
+                  {temporaryCardData
+                    .filter((card) =>  card.ListId === list.id )
+                    .map((card, cardIndex) => (
+                      <React.Fragment key={card.id}>
+                          <Droppable id={`card-${card.id}-list-${list.id}`}>
+                            <Draggable id={`card-${card.id}-list-${list.id}`}>
+                            <Card  onMouseDown={handleMouseDown} onMouseUp={() => handleMouseUp(card.id,list.id)}>
+                              <Card.Content>
+                                {card.Cardname}
+                               
+                              </Card.Content>
+                            </Card>
+                          </Draggable>
+                        </Droppable>
+                      </React.Fragment>
+                      ))
                     }
-
-                    </SortableContext>
-                  </Card.Content>
-
-                  <Card.Content extra>
-                    {isAddingCard === listIndex ? (
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="輸入卡片名稱"
-                          value={cardName}
-                          onChange={(e) => setcardName(e.target.value)}
-                        />
-                        <button onClick={() => handleCardNameSubmit(listIndex, list.id)}>確認</button>
-                        <button onClick={() => cancelCardNameSubmit(listIndex)}>取消</button>
-                      </div>
-                    ) : (
-                      <Button onClick={() => handleAddCard(listIndex)}>新增卡片</Button>
-                    )}
+ 
+                    <Card.Content extra>
+                      {isAddingCard === listIndex ? (
+                        <div>
+                          <input
+                            type="text"
+                            placeholder="输入卡片名称"
+                            value={cardName}
+                            onChange={(e) => setcardName(e.target.value)}
+                          />
+                          <button onClick={() => handleCardNameSubmit(listIndex, list.id)}>确认</button>
+                          <button onClick={() => cancelCardNameSubmit(listIndex)}>取消</button>
+                        </div>
+                      ) : (
+                        <Button onClick={() => handleAddCard(listIndex)}>新增卡片</Button>
+                      )}
+                    </Card.Content>
                   </Card.Content>
                 </Card>
-              </Droppable>
-            ))}
+              ))}
 
-            {/* 可能还需要一个用于添加新列表的区域 */}
-            {isAddingList ? (
-              <div>
-                <input
-                  type="text"
-                  placeholder="輸入列表名稱"
-                  value={listName}
-                  onChange={(e) => setListName(e.target.value)}
-                />
-                <button onClick={handleListNameSubmit}>確認</button>
-                <button onClick={cancelListNameSubmit}>取消</button>
-              </div>
-            ) : (
-              <Button className="addlistButton" onClick={handleAddList}>
-                執行專案
-              </Button>
-            )}
-          </div>
+              {/* 可能还需要一个用于添加新列表的区域 */}
+              {isAddingList ? (
+                <div>
+                  <input
+                    type="text"
+                    placeholder="输入列表名称"
+                    value={listName}
+                    onChange={(e) => setListName(e.target.value)}
+                  />
+                  <button onClick={handleListNameSubmit}>确认</button>
+                  <button onClick={cancelListNameSubmit}>取消</button>
+                </div>
+              ) : (
+                <Button className="addlistButton" onClick={handleAddList}>
+                  新增列表
+                </Button>
+              )}
+              <Button className="addlistButton" onClick={uploadCardsToBlockchain}>执行项目</Button>
+            </div>
+          </SortableContext>
+
+          
         </DndContext>
 
       </Sidebar.Pusher>
     </Sidebar.Pushable>
+
+     {/* 點擊卡片畫面 */}
+     <Modal onClose={() => setOpenCard(false)} open={openCard}>
+        <Modal.Header></Modal.Header>
+          <Modal.Description>
+            <Header>
+            {carddata.find(card => card.id === selectedCardId)?.Cardname || '未选中任何卡片'}
+            </Header>
+            <Header>描述</Header>
+    
+          </Modal.Description>
+          <Modal.Description>
+            {isAddingInModal ? (
+              <div>
+                <input
+                  type="text"
+                  placeholder="输入内容"
+                  value={modalInputValue}
+                  onChange={(e) => setModalInputValue(e.target.value)}
+                />
+                <button onClick={()=>handleDescriptSent(selectedCardId)}>确认</button>
+                <button onClick={handleCancelInModal} >取消</button>
+              </div>
+            ) : (
+              <Button onClick={() => handleCardDescribe(selectedCardId)}>新增内容</Button>
+            )}
+        </Modal.Description>
+        <Modal.Description>
+          <DatePicker
+            selected={selectedDate}
+            onChange={date => setSelectedDate(date)}
+          />
+          </Modal.Description>
+          <Modal.Description>
+           <Button onClick={handleSaveDate}>保存日期</Button>
+          </Modal.Description>
+      </Modal>
+      
+
+
   </>
+  
 );
+  
 }
 
 

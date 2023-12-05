@@ -50,5 +50,6 @@
   margin: 8px 0;
   padding: 10px;
   border-radius: 4px;
+  display: block; /* 確保顯示佔位符 */
   /* 確保佔位符的高度與卡片相同，或根據需要調整 */
 }

@@ -6,7 +6,6 @@ import Header from './Header';
 import MySettings from './pages/MySettings';
 import Home from './pages/Home';
 import Frontpage from './pages/Frontpage';
-import TestContract from './pages/TestContract';
 import Canbanpage from './pages/Canbanpage';
 import VerticalSidebar from './VerticalSidebar'; // 导入 VerticalSidebar 组件
 import SortableTest from './pages/SortableTest';
@@ -20,7 +19,6 @@ function App() {
         <Route path="/" element={<Frontpage />} exact />
         <Route path="/home" element={<Home />} exact />
         <Route path="/MySettings" element={<MySettings />} exact />
-        <Route path="/TestContract" element={<TestContract />} exact />
         <Route path="/Canbanpage" element={<Canbanpage/>} exact/> 
         <Route path="/SortableTest" element={<SortableTest/>} exact/> 
       </Routes>   

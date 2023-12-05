@@ -122,23 +122,40 @@ function Home(){
 
     //抓取workspace
     React.useEffect(() => {
-      const query = firebase
-        .firestore()
-        .collection('workspace')
-        .where('author.uid', '==', user.uid);
-      const unsubscribe = query.onSnapshot((querySnapshot) => {
-        const data = querySnapshot.docs.map((docSnapshot) => {
-          const id = docSnapshot.id;
-          return {...docSnapshot.data(),id};
+      // 監聽所有工作區的更改
+      const workspacesQuery = firebase.firestore().collection('workspace');
+      const unsubscribeWorkspaces = workspacesQuery.onSnapshot((workspaceSnapshot) => {
+        const workspaceDataPromises = workspaceSnapshot.docs.map((workspaceDoc) => {
+          const workspaceId = workspaceDoc.id;
+          const workspaceData = workspaceDoc.data();
+    
+          // 對每個工作區的成員集合進行監聽
+          const membersQuery = firebase.firestore().collection('workspace').doc(workspaceId).collection('member');
+          return membersQuery.where('uid', '==', user.uid).onSnapshot((memberSnapshot) => {
+            if (!memberSnapshot.empty) {
+              // 如果用戶是成員，更新工作區數據
+              setworkspace((prevWorkspaces) => {
+                const isExistingWorkspace = prevWorkspaces.some(w => w.id === workspaceId);
+                if (!isExistingWorkspace) {
+                  return [...prevWorkspaces, {...workspaceData, id: workspaceId}];
+                }
+                return prevWorkspaces;
+              });
+            }
+          });
         });
-        setworkspace(data);
-        console.log("工作區資料:",data);
+    
+        Promise.all(workspaceDataPromises).then(() => {
+          console.log("工作區資料更新完成");
+        });
       });
+    
       return () => {
-        // 在組件卸載時取消監聽
-        unsubscribe();
+        // 取消工作區的監聽
+        unsubscribeWorkspaces();
       };
-    }, []);
+    }, [user.uid]);
+    
   
     // 抓取看板 
     React. useEffect(() => {
@@ -202,6 +219,20 @@ function Home(){
         },
       })
       .then(() => {
+        //新增人員文件
+        const memberRef = firebase.firestore().collection("workspace").doc(doucumentRef.id).collection("member").doc();
+        memberRef.set({
+          uid:firebase.auth().currentUser.uid,
+          createdAT:firebase.firestore.Timestamp.now(),
+        })
+        .then(() => {
+          console.log("成員已添加到工作區");
+        })
+        .catch(error => {
+          console.error("添加成員時出錯:", error);
+        });
+        console.log("doucumentRefid:",doucumentRef.id);
+        // 重置狀態並導航
         setIsLoading(false);
         setOpenWorksapce(false); // 關閉 Modal
         setworkspacename('');
@@ -281,6 +312,7 @@ function Home(){
               <Header>您的工作區</Header>
               {workspace.map(({ id: workspaceId, workspacename }, index) => (
               <div key={index}>
+                
                 <Header>{workspacename}</Header>
                   <List>
                     <Button icon onClick={() => handleKanbanclick(workspaceId)}>
