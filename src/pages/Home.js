@@ -158,45 +158,72 @@ function Home(){
     
   
     // 抓取看板 
-    React. useEffect(() => {
-      const query = firebase
-        .firestore()
-        .collection('workspace')
-        .where('author.uid', '==', user.uid);
-        
-      const unsubscribe = query.onSnapshot((querySnapshot) => {
-        const promises = querySnapshot.docs.map((docSnapshot) => {
-          const id = docSnapshot.id;
-        
-          const subcollectionQuery = firebase
-            .firestore()
-            .collection('workspace')
-            .doc(id)
-            .collection('canban');
-  
-          subcollectionQuery.onSnapshot((subcollectionSnapshot) => {
-            const subcollectionData = subcollectionSnapshot.docs.map((subDocSnapshot) => {
-              const subDocId = subDocSnapshot.id;
-              const subDocData = subDocSnapshot.data();
-              return { id: subDocId, ...subDocData };
+    React.useEffect(() => {
+      const query = firebase.firestore().collection('workspace');
+      const subscribedWorkspaceIds = []; // 用來存放符合條件的 workspaceId
+    
+      const unsubscribeWorkspace = query.onSnapshot((workspaceSnapshot) => {
+        const workspacePromises = workspaceSnapshot.docs.map((docSnapshot) => {
+          const workspaceId = docSnapshot.id;
+    
+          const memberQuery = firebase.firestore()
+            .collection("workspace")
+            .doc(workspaceId)
+            .collection("member");
+    
+          memberQuery.onSnapshot((memberSnapshot) => {
+            memberSnapshot.docs.forEach((memberDoc) => {
+              const memberData = memberDoc.data();
+              if (memberData.uid === user.uid) {
+                subscribedWorkspaceIds.push(workspaceId);
+              }
             });
-  
-            setcanbandata((prevData) => {
-              // Filter out existing data to prevent duplicates
-              const newData = subcollectionData.filter(
-                (item) => !prevData.some((existingItem) => existingItem.id === item.id)
-              );
-  
-              return [...prevData, ...newData];
+          });
+        });
+    
+        Promise.all(workspacePromises).then(() => {
+          // 只處理符合條件的 workspace
+          const unsubscribe = query.onSnapshot((querySnapshot) => {
+            const promises = querySnapshot.docs.map((docSnapshot) => {
+              const id = docSnapshot.id;
+    
+              // 檢查是否為符合條件的 workspace
+              if (subscribedWorkspaceIds.includes(id)) {
+                const subcollectionQuery = firebase
+                  .firestore()
+                  .collection('workspace')
+                  .doc(id)
+                  .collection('canban');
+    
+                subcollectionQuery.onSnapshot((subcollectionSnapshot) => {
+                  const subcollectionData = subcollectionSnapshot.docs.map((subDocSnapshot) => {
+                    const subDocId = subDocSnapshot.id;
+                    const subDocData = subDocSnapshot.data();
+                    return { id: subDocId, ...subDocData };
+                  });
+    
+                  setcanbandata((prevData) => {
+                    // Filter out existing data to prevent duplicates
+                    const newData = subcollectionData.filter(
+                      (item) => !prevData.some((existingItem) => existingItem.id === item.id)
+                    );
+    
+                    return [...prevData, ...newData];
+                  });
+    
+                  console.log("看板資料:", canbandata);
+                });
+              }
             });
-            console.log("看板資料:",canbandata);
           });
         });
       });
+    
       return () => {
-        unsubscribe();
+        unsubscribeWorkspace();
       };
-    }, []);
+    }, [user.uid]);
+    
   
     React.useEffect(() => {
       console.log("canbandata 狀態變化:", canbandata);
