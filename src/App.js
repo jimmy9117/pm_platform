@@ -9,6 +9,9 @@ import Frontpage from './pages/Frontpage';
 import Canbanpage from './pages/Canbanpage';
 import VerticalSidebar from './VerticalSidebar'; // 导入 VerticalSidebar 组件
 import SortableTest from './pages/SortableTest';
+import Workspacemember from'./pages/Workspacemember';
+import CardViewArea from './pages/CardViewArea';
+import CardReviewArea from'./pages/CardReviewArea';
 import './App.css';
 
 function App() {
@@ -21,6 +24,10 @@ function App() {
         <Route path="/MySettings" element={<MySettings />} exact />
         <Route path="/Canbanpage" element={<Canbanpage/>} exact/> 
         <Route path="/SortableTest" element={<SortableTest/>} exact/> 
+        <Route path="/Workspacemember" element={<Workspacemember/>} exact/> 
+        <Route path="/CardViewArea" element={<CardViewArea/>} exact/> 
+        <Route path="/CardReviewArea" element={<CardReviewArea/>} exact/> 
+
       </Routes>   
     </BrowserRouter>
   );

@@ -7,7 +7,7 @@
     grid-auto-flow: column;
     gap: 20px;
     /* 添加一个2px宽的黑色边框 */
-    /* border: 2px solid #000;  */
+    border: 2px solid #000; 
     padding: 10px; /* 为了更好的外观，你可以添加内边距 */
   }
  

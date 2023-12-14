@@ -1,10 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate } from 'react-router-dom';
-import { Grid, List,Divider,Button,Icon,Modal,Header, Form } from "semantic-ui-react";
+import { Grid, List,Divider,Button,Icon,Modal,Header, Form,Dropdown } from "semantic-ui-react";
 import Workspace from "../components/Workspace";
 import firebase from "../utils/firebase";
 import "firebase/auth";
 import Canbanpage from"./Canbanpage";
+import { BsChevronDown } from 'react-icons/bs'; // 這裡引入了 BsChevronDown
+
+//Ethers.js
+import contractABI from '../contracts/CompanySstorage.json';
+import { Web3Provider } from '@ethersproject/providers';
+import { Contract } from 'ethers';
+import { Interface, Log } from "ethers";
+
 function Home(){
     const navigate = useNavigate();
     const [openworkspace, setOpenWorksapce] = useState(false);//工作區
@@ -28,6 +36,17 @@ function Home(){
     const [permissions,setpermissions] = useState([]);
     const [permissionsname,setpermissionsname] = useState("");
 
+     // 初始化 ethers.js 和智能合约
+  const contractAddress = '0xd9145CCE52D386f254917e481eB44e9943F39138';
+  const provider = new Web3Provider(window.ethereum);
+  const signer = provider.getSigner();
+  const cardStorageContract = new Contract(contractAddress, contractABI, signer);
+  const contractInterface = new Interface(contractABI);
+  
+  const dropdownOptions = [
+    { key: 'view', text: '檢視', value: 'view' },
+    { key: 'members', text: '成員', value: 'members' },
+  ];
 
     const handleIconClick = () => {
     setOpenWorksapce(true);  
@@ -36,8 +55,8 @@ function Home(){
     //選取工作區處理
     const handleSelectWorkspace = ()=>{
       console.log('點選工作區:');
-      console.log(canbandata);
-      console.log(workspace);
+      // console.log(canbandata);
+      // console.log(workspace);
     };
 
     //選取看板處理 
@@ -66,6 +85,25 @@ function Home(){
       console.log('testid',workspaceid);
     };
     
+    //處理工作區點擊會員
+    // 成員函數
+    const handleMembers = (workspaceId) => {
+      // 創建要傳遞的數據對象
+      const data = {
+        workspaceId: workspaceId,
+        
+      };
+      // 使用 navigate 函數將數據添加到 state 對象中
+      navigate('/Workspacemember', { state: { data } });
+    }
+
+    const handleView =(workspaceId)=>{
+      const data = {
+        workspaceId: workspaceId,
+      };
+      navigate('/CardViewArea', { state: { data } });
+    };
+
     //工作區類型選擇
     const options = topics.map(topics =>{
         return{
@@ -160,66 +198,59 @@ function Home(){
     // 抓取看板 
     React.useEffect(() => {
       const query = firebase.firestore().collection('workspace');
-      const subscribedWorkspaceIds = []; // 用來存放符合條件的 workspaceId
+      const subscribedWorkspaceIds = [];
+      let unsubscribeWorkspace;
     
-      const unsubscribeWorkspace = query.onSnapshot((workspaceSnapshot) => {
+      const handleWorkspaceSnapshot = (workspaceSnapshot) => {
         const workspacePromises = workspaceSnapshot.docs.map((docSnapshot) => {
           const workspaceId = docSnapshot.id;
     
-          const memberQuery = firebase.firestore()
-            .collection("workspace")
-            .doc(workspaceId)
-            .collection("member");
+          const memberQuery = firebase.firestore().collection("workspace").doc(workspaceId).collection("member");
     
-          memberQuery.onSnapshot((memberSnapshot) => {
-            memberSnapshot.docs.forEach((memberDoc) => {
-              const memberData = memberDoc.data();
-              if (memberData.uid === user.uid) {
-                subscribedWorkspaceIds.push(workspaceId);
-              }
-            });
+          return memberQuery.get().then((memberSnapshot) => {
+            const isMember = memberSnapshot.docs.some((memberDoc) => memberDoc.data().uid === user.uid);
+            if (isMember) {
+              subscribedWorkspaceIds.push(workspaceId);
+            }
           });
         });
     
         Promise.all(workspacePromises).then(() => {
-          // 只處理符合條件的 workspace
-          const unsubscribe = query.onSnapshot((querySnapshot) => {
-            const promises = querySnapshot.docs.map((docSnapshot) => {
-              const id = docSnapshot.id;
+          const subcollectionPromises = subscribedWorkspaceIds.map((id) => {
+            const subcollectionQuery = firebase.firestore().collection('workspace').doc(id).collection('canban');
+            
+            return subcollectionQuery.onSnapshot((subcollectionSnapshot) => {
+              const subcollectionData = subcollectionSnapshot.docs.map((subDocSnapshot) => {
+                const subDocId = subDocSnapshot.id;
+                const subDocData = subDocSnapshot.data();
+                return { id: subDocId, ...subDocData };
+              });
     
-              // 檢查是否為符合條件的 workspace
-              if (subscribedWorkspaceIds.includes(id)) {
-                const subcollectionQuery = firebase
-                  .firestore()
-                  .collection('workspace')
-                  .doc(id)
-                  .collection('canban');
+              setcanbandata((prevData) => {
+                const newData = subcollectionData.filter(
+                  (item) => !prevData.some((existingItem) => existingItem.id === item.id)
+                );
     
-                subcollectionQuery.onSnapshot((subcollectionSnapshot) => {
-                  const subcollectionData = subcollectionSnapshot.docs.map((subDocSnapshot) => {
-                    const subDocId = subDocSnapshot.id;
-                    const subDocData = subDocSnapshot.data();
-                    return { id: subDocId, ...subDocData };
-                  });
-    
-                  setcanbandata((prevData) => {
-                    // Filter out existing data to prevent duplicates
-                    const newData = subcollectionData.filter(
-                      (item) => !prevData.some((existingItem) => existingItem.id === item.id)
-                    );
-    
-                    return [...prevData, ...newData];
-                  });
-    
-                  console.log("看板資料:", canbandata);
-                });
-              }
+                return [...prevData, ...newData];
+              });
             });
           });
+    
+          // Save all unsubscribe functions in an array
+          const unsubscribers = subcollectionPromises.map((unsubscribeFunc) => unsubscribeFunc);
+    
+          unsubscribeWorkspace = () => {
+            // Call each unsubscribe function to cancel all listeners
+            unsubscribers.forEach((unsubscribeFunc) => unsubscribeFunc());
+          };
         });
-      });
+      };
+    
+      // Subscribe to the workspace query
+      unsubscribeWorkspace = query.onSnapshot(handleWorkspaceSnapshot);
     
       return () => {
+        // Unsubscribe from the workspace query
         unsubscribeWorkspace();
       };
     }, [user.uid]);
@@ -251,10 +282,27 @@ function Home(){
         memberRef.set({
           uid:firebase.auth().currentUser.uid,
           createdAT:firebase.firestore.Timestamp.now(),
+          position:"管理員",
         })
         .then(() => {
           console.log("成員已添加到工作區");
-        })
+          // 新增Review area文件
+          const reviewAreaRef = firebase.firestore().collection("workspace").doc(doucumentRef.id).collection("reviewArea").doc();
+          reviewAreaRef.set({
+              // 這裡可以添加Review area的相關資訊
+              canbanname:"",
+              ListId:"",
+              member:[],
+              describe:"",
+              deadline:"",
+            })
+            .then(() => {
+              console.log("Review area 已添加到工作區");
+            })
+            .catch((error) => {
+              console.error("添加 Review area 時出錯:", error);
+            });
+          })
         .catch(error => {
           console.error("添加成員時出錯:", error);
         });
@@ -325,12 +373,29 @@ function Home(){
                     </List.Item>
                 </List>
                 <List animated selection>
-                  {workspace.map((post, index) => (
-                      <List.Item key={index} onClick={ () => handleSelectWorkspace(post)}>
-                          {post.workspacename}
-                         
-                      </List.Item>
-                    ))}
+                {workspace.map((post, index) => (
+        <List.Item key={index}>
+          <Dropdown
+            text={post.workspacename}
+            options={dropdownOptions}
+            simple
+            item
+            onChange={(event, data) => {
+              console.log("Dropdown 被選擇", data.value);
+              const { value } = data;
+              if (value === 'view') {
+                console.log("工作區id:",post.id);
+                handleView(post.id);
+                // 处理檢視的逻辑=
+              } else if (value === 'members') {
+                // 处理成員的逻辑
+                 // 將工作區id作為參數進行畫面跳轉
+                 handleMembers(post.id);
+              }
+            }}
+          />
+        </List.Item>
+      ))}
                   
                 </List>
                 <Workspace />

@@ -16,6 +16,9 @@ function Header() {
   const navigate = useNavigate();
   const db = firebase.firestore();
 
+
+  //連線選鑿
+  
   //連結錢包判斷
   const connect = async () => {
     if (typeof window.ethereum !== "undefined") {

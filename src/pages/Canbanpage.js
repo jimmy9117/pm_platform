@@ -1,6 +1,6 @@
 import React, { useState,useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Card, Grid , Sidebar, Button, Segment, Modal, Header, Form, Icon } from 'semantic-ui-react';
+import { Card, Grid , Sidebar, Button, Segment, Modal, Header, Form, Icon,Dropdown} from 'semantic-ui-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { SortableContext, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
@@ -40,11 +40,13 @@ function Canbanpage() {
   const [dragStartIndex,setDragStartIndex] = useState(null);
   //點擊卡片判斷
   const [openCard,setOpenCard] = useState(false);
+  const [openFinishModal, setOpenFinishModal] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [mouseDownTime, setMouseDownTime] = useState(0);
   const [selectedCardId, setSelectedCardId] = useState(null);
   const [selectedCardInfId, setSelectedCardInfId] = useState(null);
   const [selectedListId, setSelectedListId] = useState(null);
+  const [memberdata,setmemberdata] = useState([]);
 
   //卡片Modal判斷
   const [isAddingInModal, setIsAddingInModal] = useState(false);
@@ -52,7 +54,7 @@ function Canbanpage() {
   const [selectedDate, setSelectedDate] = useState("");
   
   // 初始化 ethers.js 和智能合约
-  const contractAddress = '0xA25f130124E208833F8c74DD46E82Bc8479D0018';
+  const contractAddress = '0x12FE2F9f9BA95189F26990051dCf3c3272b4D044';
   const provider = new Web3Provider(window.ethereum);
   const signer = provider.getSigner();
   const cardStorageContract = new Contract(contractAddress, contractABI, signer);
@@ -70,6 +72,12 @@ function Canbanpage() {
   const handleIconClick = () => {
     setVisible(!visible) ;
   };
+
+  //工作區人員資料
+  const memberoptions = memberdata.map(member => ({
+    text: member.uid,
+    value: member.uid,
+  }));
 
   // 检查 data 是否存在
   if (data && !workspaceid && !canbanid) {
@@ -118,42 +126,24 @@ function Canbanpage() {
       .collection("workspace").doc(workspaceid)
       .collection("canban").doc(canbanid)
       .collection("list").doc(selectedListId)
-      .collection("card").doc(CardId)
-      .collection("cardinf").get()
-      .then((collectionSnapshot) => {
-      if (!collectionSnapshot.empty) {
-      const cardInfId = collectionSnapshot.docs[0].id; // 获取第一个文档的 ID
-      // 使用获取到的文档 ID 更新卡片信息
-      const cardInfRef = firebase.firestore()
-        .collection("workspace").doc(workspaceid)
-        .collection("canban").doc(canbanid)
-        .collection("list").doc(selectedListId)
-        .collection("card").doc(CardId)
-        .collection("cardinf").doc(cardInfId);
+      .collection("card").doc(CardId);
 
-      cardInfRef.update({
+      cardQuery.update({
         describe: modalInputValue
       })
       .then(() => {
         console.log("卡片描述信息已更新");
         setIsAddingInModal(false);
-
+        setModalInputValue("");
       })
       .catch(error => {
         console.error("更新卡片描述信息时出错:", error);
       });
-    } else {
-      console.log("未找到卡片信息文档");
-    }
-  })
-    .catch(error => {
-      console.error("查询卡片信息时出错:", error);
-    });
-
     }
     //取消Modal描述
     const handleCancelInModal = ()=>{
       setIsAddingInModal(false);
+      setModalInputValue("");
     };
 
     //取消新增卡片按鈕 
@@ -168,41 +158,81 @@ function Canbanpage() {
         alert("请先选择一个日期。");
         return;
       }
-      const cardQuery = firebase.firestore()
+      const cardRef = firebase.firestore()
       .collection("workspace").doc(workspaceid)
       .collection("canban").doc(canbanid)
       .collection("list").doc(selectedListId)
-      .collection("card").doc(selectedCardId)
-      .collection("cardinf").get()
-      .then((collectionSnapshot) => {
-      if (!collectionSnapshot.empty) {
-      const cardInfId = collectionSnapshot.docs[0].id; 
+      .collection("card").doc(selectedCardId);
 
-      const cardInfRef = firebase.firestore()
-      .collection("workspace").doc(workspaceid)
-      .collection("canban").doc(canbanid)
-      .collection("list").doc(selectedListId)
-      .collection("card").doc(selectedCardId)
-      .collection("cardinf").doc(cardInfId);
-
-       cardInfRef.update({
+      // 更新 deadline
+      cardRef.update({
         deadline: selectedDate
       })
       .then(() => {
-        console.log("卡片終止日期已更新");
-       
+        console.log("卡片的 deadline 已成功更新");
+        setSelectedDate("");
       })
-      .catch(error => {
-        console.error("更新卡片時間出错:", error);
+      .catch((error) => {
+        console.error("更新卡片的 deadline 時出現錯誤：", error);
       });
-    } else {
-      console.log("未找到卡片信息文档");
     }
-  })
-    .catch(error => {
-      console.error("查询卡片信息时出错:", error);
-    });
-}
+    
+    //送出完成按鈕
+    const handleFinish = () =>{
+      setOpenFinishModal(true);
+    }
+    
+    //確認送出完成卡片
+    const handleSentCard = () =>{
+      const cardRef = firebase.firestore()
+      .collection("workspace").doc(workspaceid)
+      .collection("canban").doc(canbanid)
+      .collection("list").doc(selectedListId)
+      .collection("card").doc(selectedCardId);
+
+      cardRef.update({
+        state:"待審核"
+      })
+      .then(() => {
+        console.log("卡片的狀態已更新成功");
+        setOpenFinishModal(false);
+         // 手動更新卡片數據的狀態
+      setcarddata((prevData) =>
+        prevData.map((card) =>
+          card.id === selectedCardId ? { ...card, state: "待審核" } : card
+        )
+      );
+      })
+      .catch((error) => {
+        console.error("卡片的狀態已更新時出現錯誤：", error);
+      });
+    }
+
+    //取消送出卡片
+    const cancelCardSent = () =>{
+      setOpenFinishModal(false);
+    }
+
+    //新增卡片人員按鈕
+    const handleAddcardMembers = (userid) => {
+      console.log("Addcardmember",userid);
+      const cardRef = firebase.firestore()
+      .collection("workspace").doc(workspaceid)
+      .collection("canban").doc(canbanid)
+      .collection("list").doc(selectedListId)
+      .collection("card").doc(selectedCardId);
+
+      // 更新 deadline
+      cardRef.update({
+        member: firebase.firestore.FieldValue.arrayUnion(userid)
+      })
+      .then(() => {
+        console.log("卡片的member已添加成功");
+      })
+      .catch((error) => {
+        console.error("更新卡片的member時出現錯誤：", error);
+      });
+    };
 
     //新增列表
     const handleListNameSubmit = () => {
@@ -260,27 +290,16 @@ function Canbanpage() {
 
       documentRef.set({
         ListId: ListId,
+        canbanid:canbanid,
         Cardname: cardName,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(), // 使用 serverTimestamp
+        describe:" ",
+        deadline:" ",
+        member:[],
+        state:"未完成",
       })
       .then(() => {
-        const cardInfRef = firebase.firestore()
-        .collection("workspace").doc(workspaceid)
-        .collection("canban").doc(canbanid)
-        .collection("list").doc(ListId)
-        .collection("card").doc(documentRef.id)
-        .collection("cardinf").doc();
-
-        cardInfRef.set({
-          cardId:documentRef.id,
-          describe:" ",
-          deadline:" ",
-        }).then(() =>{
-          console.log("以新增卡片資訊");
-        })
-        .catch(error =>{
-          console.error("添加卡片資訊錯誤",error);
-        });
+       
         
         //重製狀態
         setIsLoading(false);
@@ -381,12 +400,35 @@ function Canbanpage() {
       }
     },[]);
 
+    //抓取卡片資料
     React.useEffect(() => {
       console.log("carddata 狀態變化:", carddata);
       setTemporaryCardData(carddata);
       // 在這裡處理你希望在 canbandata 變化時執行的操作
     }, [carddata]);
     
+    //抓取人員
+      React.useEffect(() => {
+        // 監聽所有工作區的更改
+        const workspacesQuery = firebase.firestore().collection('workspace').doc(workspaceid).collection('member');
+        
+        // 設置監聽器
+        const unsubscribe = workspacesQuery.onSnapshot((memberSnapshot) => {
+            // 初始化一個陣列，用於存放成員資訊
+            const membersArray = [];
+    
+            memberSnapshot.docs.forEach((docSnapshot) => {
+                const member = docSnapshot.data();
+                // console.log("抓到的人員:", member.uid);
+    
+                // 將每個成員放入陣列
+                membersArray.push(member);
+            });
+    
+            // 將整個陣列設置為成員資訊
+            setmemberdata(membersArray);
+        });
+    })
     //佔位符顯示
     const Placeholder = () => {
       return (
@@ -400,7 +442,7 @@ function Canbanpage() {
       //console.log("DragStartIndex 更新為:", dragStartIndex);
     }, [dragStartIndex]);
     
-    //點擊卡片畫密
+    //點擊卡片畫面
     const handleCardClick = (cardId) => {
      if (isDragging === false) {
     console.log("点击卡片");
@@ -541,7 +583,7 @@ const uploadCardsToBlockchain = async () => {
 
     for (const card of carddata) {
       // 手动编码调用数据
-      const data = cardStorageContract.interface.encodeFunctionData('addCard', [card.Cardname, card.ListId, card.id]);
+      const data = cardStorageContract.interface.encodeFunctionData('addCard', [card.Cardname, card.ListId, card.id,card.deadline,[firebase.auth().currentUser.uid]]);
       console.log("卡片名字:",card.Cardname);
       console.log("卡片片列表ID:",card.ListId);
       console.log("卡片ID:",card.id);
@@ -590,7 +632,7 @@ return (
                 <Card.Content>
                   <Card.Header>{list.Listname}</Card.Header>
                   {temporaryCardData
-                    .filter((card) =>  card.ListId === list.id )
+                    .filter((card) =>  card.ListId === list.id && card.state === "未完成")
                     .map((card, cardIndex) => (
                       <React.Fragment key={card.id}>
                           <Droppable id={`card-${card.id}-list-${list.id}`}>
@@ -681,6 +723,16 @@ return (
             )}
         </Modal.Description>
         <Modal.Description>
+          <Dropdown
+            text="新增人員"
+            selection
+            options={memberoptions}
+            onChange={(event, data) => handleAddcardMembers(data.value)}
+            style={{ minWidth: '100px' }}
+          
+          />
+        </Modal.Description>
+        <Modal.Description>
           <DatePicker
             selected={selectedDate}
             onChange={date => setSelectedDate(date)}
@@ -689,8 +741,22 @@ return (
           <Modal.Description>
            <Button onClick={handleSaveDate}>保存日期</Button>
           </Modal.Description>
+          <Modal.Description>
+           <Button onClick={handleFinish}>完成</Button>
+          </Modal.Description>
       </Modal>
       
+       {/* 完成 Modal */}
+       <Modal size="mini" onClose={()=>setOpenFinishModal(false)} open={openFinishModal}>
+        <Modal.Header>確認將卡片送出嗎</Modal.Header>
+        <Modal.Description>
+          {/* 完成 Modal 的内容 */}
+          <p></p>
+          <Button onClick={handleSentCard}>確認</Button>
+          <Button onClick={cancelCardSent}>再想想</Button>
+        </Modal.Description>
+      </Modal>
+
 
 
   </>
