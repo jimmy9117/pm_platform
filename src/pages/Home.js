@@ -71,7 +71,9 @@ function Home(){
       // 創建要傳遞的數據對象
       const data = {
         clickcanbanid: item.id,
+        clickcanbanname: item.canbanname,
         clickworkspaceid: item.workspaceId,
+
       };
 
       // 導航到 Canbanpage 並傳遞數據
@@ -386,7 +388,7 @@ function Home(){
               if (value === 'view') {
                 console.log("工作區id:",post.id);
                 handleView(post.id);
-                // 处理檢視的逻辑=
+                // 处理檢視的逻辑
               } else if (value === 'members') {
                 // 处理成員的逻辑
                  // 將工作區id作為參數進行畫面跳轉

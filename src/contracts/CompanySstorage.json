@@ -1,62 +1,34 @@
 [
 	{
+		"anonymous": false,
 		"inputs": [
 			{
-				"internalType": "string",
-				"name": "_name",
-				"type": "string"
-			},
-			{
+				"indexed": true,
 				"internalType": "address",
-				"name": "_walletAddress",
+				"name": "employeeAddress",
 				"type": "address"
 			},
 			{
-				"internalType": "string",
-				"name": "_position",
-				"type": "string"
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "points",
+				"type": "uint256"
 			}
 		],
-		"name": "addEmployee",
+		"name": "CardCompleted",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "_employeeAddresses",
+				"type": "address[]"
+			}
+		],
+		"name": "completeCard",
 		"outputs": [],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"name": "boards",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "boardName",
-				"type": "string"
-			},
-			{
-				"internalType": "address",
-				"name": "cardContract",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "companyName",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -83,40 +55,14 @@
 				"internalType": "string",
 				"name": "position",
 				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "points",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "_boardName",
-				"type": "string"
-			},
-			{
-				"internalType": "address",
-				"name": "_cardContractAddress",
-				"type": "address"
-			}
-		],
-		"name": "setBoard",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "_companyName",
-				"type": "string"
-			}
-		],
-		"name": "setCompanyName",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	}
 ]

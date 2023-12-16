@@ -9,7 +9,7 @@ import Frontpage from './pages/Frontpage';
 import Canbanpage from './pages/Canbanpage';
 import VerticalSidebar from './VerticalSidebar'; // 导入 VerticalSidebar 组件
 import SortableTest from './pages/SortableTest';
-import Workspacemember from'./pages/Workspacemember';
+import Workspacemember from './pages/Workspacemember';
 import CardViewArea from './pages/CardViewArea';
 import CardReviewArea from'./pages/CardReviewArea';
 import './App.css';

@@ -1,28 +1,63 @@
 [
 	{
-		"inputs": [],
-		"name": "getValue",
-		"outputs": [
+		"anonymous": false,
+		"inputs": [
 			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "employeeAddress",
+				"type": "address"
+			},
+			{
+				"indexed": false,
 				"internalType": "uint256",
-				"name": "",
+				"name": "points",
 				"type": "uint256"
 			}
 		],
-		"stateMutability": "view",
+		"name": "CardCompleted",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "_employeeAddresses",
+				"type": "address[]"
+			}
+		],
+		"name": "completeCard",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "employees",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "walletAddress",
+				"type": "address"
+			},
+			{
 				"internalType": "uint256",
-				"name": "_newValue",
+				"name": "points",
 				"type": "uint256"
 			}
 		],
-		"name": "setValue",
-		"outputs": [],
-		"stateMutability": "nonpayable",
+		"stateMutability": "view",
 		"type": "function"
 	}
 ]

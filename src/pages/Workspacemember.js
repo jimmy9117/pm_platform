@@ -1,10 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate,useLocation } from 'react-router-dom';
 import { Grid, List,Divider,Button,Icon,Modal,Header, Form,Dropdown } from "semantic-ui-react";
-import Workspace from "../components/Workspace";
 import firebase from "../utils/firebase";
 import "firebase/auth";
-import Canbanpage from"./Canbanpage";
+
 import { BsChevronDown } from 'react-icons/bs'; // 這裡引入了 BsChevronDown
 
 
@@ -58,7 +57,7 @@ function Workspacemember(){
     
             memberRef
                 .set({
-                uid: inputMemberAddress,
+                uid:inputMemberAddress,
                 createdAT: firebase.firestore.Timestamp.now(),
                 position: "人員",
                 })
@@ -202,7 +201,7 @@ function Workspacemember(){
                     onChange={(event, data) => handlePositionChange( data.value)}
                     style={{ minWidth: '100px' }} // 設置最小寬度
                     />
-                <Button onClick={AddworkspaceMember}>加入</Button>          
+                <Button onClick={AddworkspaceMember}></Button>          
                 </Modal.Description>
                 </Modal>
 

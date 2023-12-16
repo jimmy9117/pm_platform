@@ -13,7 +13,7 @@ import firebase from "../utils/firebase";
 import "firebase/auth";
 
 //Ethers.js
-import contractABI from '../contracts/CardStorage.json';
+import contractABI from '../contracts/CompanySstorage.json';
 import { Web3Provider } from '@ethersproject/providers';
 import { Contract } from 'ethers';
 import { Interface, Log } from "ethers";
@@ -32,6 +32,7 @@ function Canbanpage() {
   const [cardName, setcardName] = useState('');
   const [workspaceid,setworkspaceid] = useState("");
   const [canbanid,setcanbanid] = useState("");
+  const [canbanname,setcanbanname] = useState("");
   const [listdata,setlistdata] = React.useState([]);
   const [carddata,setcarddata] = React.useState([]);
   const [temporaryCardData, setTemporaryCardData] = useState([...carddata]);
@@ -82,11 +83,12 @@ function Canbanpage() {
   // 检查 data 是否存在
   if (data && !workspaceid && !canbanid) {
     const clickcanbanid = data.clickcanbanid;
+    const clickcanbanname = data.clickcanbanname;
     const clickworkspaceid = data.clickworkspaceid;
-  
+    
     setworkspaceid(clickworkspaceid);
     setcanbanid(clickcanbanid);
-
+    setcanbanname(clickcanbanname);
   }
   
 
@@ -194,7 +196,7 @@ function Canbanpage() {
         state:"待審核"
       })
       .then(() => {
-        console.log("卡片的狀態已更新成功");
+        console.log("卡片已成功送出");
         setOpenFinishModal(false);
          // 手動更新卡片數據的狀態
       setcarddata((prevData) =>
@@ -291,6 +293,7 @@ function Canbanpage() {
       documentRef.set({
         ListId: ListId,
         canbanid:canbanid,
+        canbanname:canbanname,
         Cardname: cardName,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(), // 使用 serverTimestamp
         describe:" ",
@@ -577,41 +580,41 @@ function Canbanpage() {
 
 
 
-//智能合約交易上鍊
-const uploadCardsToBlockchain = async () => {
-  try {
+// //智能合約交易上鍊
+// const uploadCardsToBlockchain = async () => {
+//   try {
 
-    for (const card of carddata) {
-      // 手动编码调用数据
-      const data = cardStorageContract.interface.encodeFunctionData('addCard', [card.Cardname, card.ListId, card.id,card.deadline,[firebase.auth().currentUser.uid]]);
-      console.log("卡片名字:",card.Cardname);
-      console.log("卡片片列表ID:",card.ListId);
-      console.log("卡片ID:",card.id);
-      console.log("截止時間:",selectedDate);
-      // 创建并发送交易
-      const tx = await signer.sendTransaction({
-        to: contractAddress,
-        data: data
-      });
+//     for (const card of carddata) {
+//       // 手动编码调用数据
+//   encodeFunctionData('addCard', [card.Cardname, card.ListId, card.id,card.deadline,[firebase.auth().currentUser.uid]]);      const data = cardStorageContract.interface.
+//       console.log("卡片名字:",card.Cardname);
+//       console.log("卡片片列表ID:",card.ListId);
+//       console.log("卡片ID:",card.id);
+//       console.log("截止時間:",selectedDate);
+//       // 创建并发送交易
+//       const tx = await signer.sendTransaction({
+//         to: contractAddress,
+//         data: data
+//       });
 
-      // 等待交易被挖掘
-      const receipt = await tx.wait();
-      const returndata = receipt.transactionHash;
-      // 现在可以安全地访问 receipt 对象的属性
-      console.log("receipt回傳值:", receipt.confirmations);
-      console.log("完整訊息", receipt);
-      console.log("Transaction hash:", receipt.transactionHash);
-      console.log("Block number:", receipt.blockNumber);
-      console.log("Gas used:", receipt.gasUsed.toString());
-      console.log(`Card with ID ${card.id} added to the blockchain.`);
-      // // 使用Interface实例解码交易输入数据
-      // const parsedTransaction = contractInterface.parseTransaction({  });
-      // console.log("上鏈回傳的資料",parsedTransaction); // 输出解码后的交易数据
-    }
-  } catch (error) {
-    console.error('Error uploading cards to the blockchain:', error);
-  }
-};
+//       // 等待交易被挖掘
+//       const receipt = await tx.wait();
+//       const returndata = receipt.transactionHash;
+//       // 现在可以安全地访问 receipt 对象的属性
+//       console.log("receipt回傳值:", receipt.confirmations);
+//       console.log("完整訊息", receipt);
+//       console.log("Transaction hash:", receipt.transactionHash);
+//       console.log("Block number:", receipt.blockNumber);
+//       console.log("Gas used:", receipt.gasUsed.toString());
+//       console.log(`Card with ID ${card.id} added to the blockchain.`);
+//       // // 使用Interface实例解码交易输入数据
+//       // const parsedTransaction = contractInterface.parseTransaction({  });
+//       // console.log("上鏈回傳的資料",parsedTransaction); // 输出解码后的交易数据
+//     }
+//   } catch (error) {
+//     console.error('Error uploading cards to the blockchain:', error);
+//   }
+// };
 
 return (
   <>
@@ -686,7 +689,7 @@ return (
                   新增列表
                 </Button>
               )}
-              <Button className="addlistButton" onClick={uploadCardsToBlockchain}>执行项目</Button>
+              {/* <Button className="addlistButton" onClick={uploadCardsToBlockchain}>执行项目</Button> */}
             </div>
           </SortableContext>
 
