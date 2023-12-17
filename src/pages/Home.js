@@ -288,22 +288,6 @@ function Home(){
         })
         .then(() => {
           console.log("成員已添加到工作區");
-          // 新增Review area文件
-          const reviewAreaRef = firebase.firestore().collection("workspace").doc(doucumentRef.id).collection("reviewArea").doc();
-          reviewAreaRef.set({
-              // 這裡可以添加Review area的相關資訊
-              canbanname:"",
-              ListId:"",
-              member:[],
-              describe:"",
-              deadline:"",
-            })
-            .then(() => {
-              console.log("Review area 已添加到工作區");
-            })
-            .catch((error) => {
-              console.error("添加 Review area 時出錯:", error);
-            });
           })
         .catch(error => {
           console.error("添加成員時出錯:", error);

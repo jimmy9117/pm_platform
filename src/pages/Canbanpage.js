@@ -294,8 +294,8 @@ function Canbanpage() {
         ListId: ListId,
         canbanid:canbanid,
         canbanname:canbanname,
-        Cardname: cardName,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp(), // 使用 serverTimestamp
+        Cardname:cardName,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp(), // 使用 serverTimestamp
         describe:" ",
         deadline:" ",
         member:[],
