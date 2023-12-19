@@ -11,9 +11,9 @@ import { BsChevronDown } from 'react-icons/bs'; // 這裡引入了 BsChevronDown
 //Ethers.js
 import contractABI from '../contracts/CompanySstorage.json';
 import { Web3Provider } from '@ethersproject/providers';
-import { Contract } from 'ethers';
+import { Contract ,ethers} from 'ethers';
 import { Interface, Log } from "ethers";
-import { ethers } from 'ethers';
+
 
 function CardReviewArea(){
     const navigate = useNavigate();
@@ -29,8 +29,9 @@ function CardReviewArea(){
     const [openCardConfirmModal,setOpenCardConfirmModal] = useState(false);
     const [openCardReturnModal,setOpenCardReturnModal] = useState(false);
 
+
     // 初始化 ethers.js 和智能合约
-  const contractAddress = '0x60ab94cA91481B9e481984f2AF690e4421A502EB';
+  const contractAddress = '0x6A9a9A0f134A547F4BE52234dCB742C202f918c4';
   const provider = new Web3Provider(window.ethereum);
   const signer = provider.getSigner();
   const cardStorageContract = new Contract(contractAddress, contractABI, signer);
@@ -55,46 +56,43 @@ function CardReviewArea(){
 
     // 抓取所有卡片
     React.useEffect(() => {
-        // 監聽所有工作區的更改
         const workspacesQuery = firebase.firestore().collection('workspace').doc(workspaceId).collection('canban');
         const unsubscribeCanban = workspacesQuery.onSnapshot((workspaceSnapshot) => {
             const promises = workspaceSnapshot.docs.map((docSnapshot) => {
                 const canbanid = docSnapshot.id;
                 console.log("canbanid:", canbanid);
+
                 const subcollectionQuery = firebase.firestore().collection("workspace").doc(workspaceId).collection("canban").doc(canbanid).collection("list");
                 const unsubscribeList = subcollectionQuery.onSnapshot((listSnapshot) => {
                     listSnapshot.docs.forEach((listDoc) => {
                         const listId = listDoc.id;
                         console.log("listId:", listId);
-                        // 卡片資料
-                        const cardQuery = firebase.firestore().collection("workspace").doc(workspaceId).collection("canban").doc(canbanid).collection("list").doc(listId).collection("card");
-                    
-                        const unsubscribeCard = cardQuery.where("state", "==", "待審核").onSnapshot((cardSnapshot) => {
-                            const data = cardSnapshot.id;
-                            console.log("data",data);
-                            const cardData = cardSnapshot.docs.map((cardDoc) => ({
-                                id: cardDoc.id,
 
+                        const cardQuery = firebase.firestore().collection("workspace").doc(workspaceId).collection("canban").doc(canbanid).collection("list").doc(listId).collection("card");
+                        const unsubscribeCard = cardQuery.where("state", "==", "待審核").onSnapshot((cardSnapshot) => {
+                            const newCardData = cardSnapshot.docs.map((cardDoc) => ({
+                                id: cardDoc.id,
                                 ...cardDoc.data()
                             }));
 
-                            console.log("待審核卡片資料:", cardData);
-                            setCarddata(cardData);
+                            // 使用 Set 來確保每個卡片 ID 是唯一的
+                            setCarddata((prevCardData) => {
+                                const uniqueCardData = new Set([...prevCardData, ...newCardData]);
+                                return Array.from(uniqueCardData);
+                            });
                         });
 
-                        // 解除卡片資料的監聽
                         return () => unsubscribeCard();
                     });
                 });
 
-                // 解除列表資料的監聽
                 return () => unsubscribeList();
             });
         });
 
-        // 在 component 卸載時解除看板資料的監聽
         return () => unsubscribeCanban();
     }, [workspaceId]);
+
 
     //抓取卡片資料
     React.useEffect(() => {
@@ -102,7 +100,12 @@ function CardReviewArea(){
       }, [carddata]);
 
     const test =()=>{
-     
+        console.log("workspaceid:",workspaceId);
+        // 將工作區ID轉換為 bytes32
+     // 將工作區ID轉換為 bytes32
+    const workspaceKey = ethers.solidityPackedKeccak256(['string'], [workspaceId]);
+    console.log("未改變的數值:", workspaceId);
+    console.log("工作區ID轉換為bytes32:", workspaceKey);
     };
   
     // 將確認完成卡片上鏈和計算人員積分
@@ -111,13 +114,14 @@ function CardReviewArea(){
         console.log("SelectedCardMember:", selectedCardMember);
         console.log("workspaceid:",workspaceId);
 
+       
         // 將卡片人員的地址陣列上鏈
-        const data = cardStorageContract.interface.encodeFunctionData('completeCard', [selectedCardMember]);
+        const data = cardStorageContract.interface.encodeFunctionData('completeCard', [selectedCardMember,workspaceId]);
 
         // 發送交易
         const tx = await signer.sendTransaction({
             to: contractAddress,
-            data: data
+            data: data,
         });
 
         // 等待交易確認
@@ -126,25 +130,110 @@ function CardReviewArea(){
         // 處理交易收據
         console.log("receipt回傳值:", receipt.confirmations);
         console.log("完整訊息", receipt);
-        console.log("Transaction hash:", receipt.transactionHash);
-        console.log("Block number:", receipt.blockNumber);
-        console.log("Gas used:", receipt.gasUsed.toString());
-        console.log("Complete card transaction confirmed.");
-        
+        // console.log("Transaction hash:", receipt.transactionHash);
+        // console.log("Block number:", receipt.blockNumber);
+        // console.log("Gas used:", receipt.gasUsed.toString());
+        // console.log("Complete card transaction confirmed.");
         setopenViewCard(false);
         setOpenCardReturnModal(false);
     };
 
-    const eventName = "CardCompleted";
 
-    const yourListenerFunction = (employeeAddress, points,event) => {
-        console.log(`收到事件 ${eventName}：`);
-    
-        console.log(`人員地址：${employeeAddress}`);
-        console.log(`積分：${points}`);
+   // 定義事件名稱和監聽器函式
+    const eventName = 'CardCompleted';
+    const eventFilter = cardStorageContract.filters[eventName]();
+
+    // 建立事件監聽器的回調函式
+    const eventListener = (employeeAddress, workspace, points, event) => {
+        console.log(`錢包地址: ${employeeAddress}, 工作區ID: ${workspace}, 積分: ${points}`);
     };
 
-    cardStorageContract.on(eventName, yourListenerFunction);
+    // 監聽事件
+    cardStorageContract.on(eventName, eventListener);
+
+   // 等待 5 秒鐘再取消註冊事件
+    setTimeout(() => {
+        cardStorageContract.off(eventName, eventListener);
+    }, 4000);
+
+
+
+// 定義一個非同步函式，它允許使用 await 運算式
+async function fetchData() {
+    try {
+        // 調用 getEmployeePercentages 函式，並等待 Promise 完成
+        const result = await cardStorageContract.getEmployeePercentages(workspaceId);
+
+        // 解包 Proxy 對象中的陣列
+        const totalPoints = result[0];
+        const addresses = result[1].map(address => address.toString());
+        const percentages = result[2].map(percent => percent.toNumber());
+
+        // 在控制台上輸出結果
+        console.log("Total Points:", totalPoints);
+        console.log("Addresses:", addresses);
+        console.log("Percentages:", percentages);
+    } catch (error) {
+        // 處理錯誤
+        console.error("Error fetching data:", error);
+    }
+}
+
+// 調用 fetchData 函式
+fetchData();
+
+
+// 調用 fetchData 函式
+fetchData();
+
+
+  
+
+  // 總積分調用
+async function callContract() {
+    try {
+      const result = await cardStorageContract.testGetEmployeePercentages(workspaceId);
+      console.log("Result:", result);
+      // 处理返回的结果
+      const workspaceKey = result[0];
+      const totalPoints = result[1];
+  
+      console.log('Workspace Key:', workspaceKey);
+      console.log('Total Points:', totalPoints);
+    } catch (error) {
+      console.error('Error calling contract function:', error);
+    }
+  }
+  // 调用函数
+//   callContract();
+
+// 測試單獨一個人資料
+async function fetchTestPercentage() {
+    try {
+        // 指定一個已知的人員地址
+        const testAddress ="0xdbE430Ab7b69E95948aF9a003341838FA937fcB4";
+
+        // 調用 testCalculatePercentage 函式，並等待 Promise 完成
+        const result = await cardStorageContract.testCalculatePercentage(workspaceId,testAddress);
+
+        // 將 Proxy 對象轉換為陣列
+        const workspaceKey = result[0];
+        const totalPoints = result[1];
+        const testPercentage = result[2];
+
+        // 在控制台上輸出結果
+        console.log("Workspace Key:", workspaceKey);
+        console.log("Total Points:", totalPoints);
+        console.log("Test Percentage:", testPercentage);
+    } catch (error) {
+        // 處理錯誤
+        console.error("Error fetching test percentage:", error);
+    }
+}
+
+// 調用 fetchTestPercentage 函式
+//fetchTestPercentage();
+
 
 
      

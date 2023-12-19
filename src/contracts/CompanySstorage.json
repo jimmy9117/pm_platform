@@ -9,6 +9,12 @@
 				"type": "address"
 			},
 			{
+				"indexed": true,
+				"internalType": "bytes32",
+				"name": "workspace",
+				"type": "bytes32"
+			},
+			{
 				"indexed": false,
 				"internalType": "uint256",
 				"name": "points",
@@ -19,11 +25,35 @@
 		"type": "event"
 	},
 	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "bytes32",
+				"name": "workspaceKey",
+				"type": "bytes32"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "totalPoints",
+				"type": "uint256"
+			}
+		],
+		"name": "TestLog",
+		"type": "event"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "address[]",
-				"name": "_employeeAddresses",
+				"name": "_addresses",
 				"type": "address[]"
+			},
+			{
+				"internalType": "string",
+				"name": "_workspaceId",
+				"type": "string"
 			}
 		],
 		"name": "completeCard",
@@ -34,31 +64,84 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
+				"internalType": "string",
+				"name": "_workspaceId",
+				"type": "string"
+			}
+		],
+		"name": "getEmployeePercentages",
+		"outputs": [
+			{
+				"internalType": "uint256",
 				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_workspaceId",
+				"type": "string"
+			},
+			{
+				"internalType": "address",
+				"name": "_testAddress",
 				"type": "address"
 			}
 		],
-		"name": "employees",
+		"name": "testCalculatePercentage",
 		"outputs": [
 			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"internalType": "address",
-				"name": "walletAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "string",
-				"name": "position",
-				"type": "string"
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
 			},
 			{
 				"internalType": "uint256",
-				"name": "points",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "_workspaceId",
+				"type": "string"
+			}
+		],
+		"name": "testGetEmployeePercentages",
+		"outputs": [
+			{
+				"internalType": "bytes32",
+				"name": "",
+				"type": "bytes32"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
 				"type": "uint256"
 			}
 		],

@@ -40,6 +40,8 @@ function Workspacemember(){
     const [clickRemoveModal,setClickRemoveModal] = useState(false);
     const [quitmemberid,setQuitMemberId] = useState("");
     const [removememberid,setRemoveMemberId] = useState("");
+    const [selectposition,setSelectposition] = useState("");
+    const [selectmember,setSelectmember] = useState("");
 
     // 按鈕事件 新增工作區人員
     function AddworkspaceMember() {
@@ -119,14 +121,61 @@ function Workspacemember(){
     })
     
     //按下修改按鈕
-    const ChangeButton = () =>{
-        setOpenChangePostion(true)
+    const ChangeButton = (uid) =>{
+        setOpenChangePostion(true);
+        setSelectmember(uid);
     };
     //修改職位
-    const handlePositionChange = (uid,position) =>{
-        console.log("test");
-        
+    const handlePositionChange = (position) =>{
+        console.log("test",position);
+       
+        setSelectposition(position);
     };
+
+    //處理人員修改
+    const upDataMemberPosition = () =>{
+        const isManager = memberdata.some((member) => member.uid === user.uid  && member.position === '管理員');
+        const numberOfManagers = memberdata.filter(member => member.position === '管理員').length;
+        console.log('管理員人數:', numberOfManagers);
+        console.log("修改的人員id:",selectmember);
+        if (numberOfManagers < 2 && selectposition === '人員') {
+            console.log('工作區至少需要一位管理員');
+            alert("工作區至少需要一位管理員!!");
+            setOpenChangePostion(false);
+                setSelectposition("");
+            // 在這裡可以加入相應的提示或處理邏輯
+            return;
+          }
+        if(isManager){
+            const memberRef = firebase.firestore().collection('workspace').doc(workspaceId).collection('member');
+            memberRef.where('uid', '==', selectmember).get()
+              .then((querySnapshot) => {
+                if (!querySnapshot.empty) {
+                  // 找到符合條件的文件
+                  const firstMemberDoc = querySnapshot.docs[0];
+                  const memberId = firstMemberDoc.id;
+            
+                  console.log('人員文件ID:', memberId);
+                  // 更新職位
+                  return memberRef.doc(memberId).update({ position: selectposition });
+                } else {
+                  console.log('找不到符合條件的人員文件');
+                }
+              })
+              .then(() => {
+                console.log('人員職位更新成功');
+                setOpenChangePostion(false);
+                setSelectposition("");
+              })
+              .catch((error) => {
+                console.error('查詢人員文件時發生錯誤：', error);
+              });
+          
+        }else{
+            alert("你不是管理員!!");
+        }  
+    };
+
     //處理人員點擊退出按鈕
     const handleClickQuitButton = (memberid) =>{
         setClickQuitModal(true);
@@ -137,14 +186,14 @@ function Workspacemember(){
     const handleMemberQuit = () => {
         const memberRef = firebase.firestore().collection("workspace").doc(workspaceId).collection("member");
         const query = memberRef.where("uid", "==", quitmemberid);
-    
+        let memberId = "";
         query.get()
             .then((querySnapshot) => {
                 if (!querySnapshot.empty) {
                     const firstMemberDoc = querySnapshot.docs[0];
-                    const memberId = firstMemberDoc.id;
+                    memberId = firstMemberDoc.id;
                     const finalMemberRef = memberRef.doc(memberId);
-    
+                    console.log("test1:",memberId);
                     return finalMemberRef.get();
                 } else {
                     console.log("找不到符合條件的人員文件");
@@ -155,10 +204,12 @@ function Workspacemember(){
                 if (doc.exists) {
                     const memberData = doc.data();
                     const isManager = memberData.position === '管理員';
-                    
+                    console.log("memberId:",memberData);
                     if (isManager) {
                         return firebase.firestore().collection("workspace").doc(workspaceId).collection("member").where("position", "==", "管理員").get();
                     } else {
+                        return  memberRef.doc(memberId).delete();
+
                         return Promise.resolve(); // 不是管理員，直接執行退出操作
                     }
                 } else {
@@ -180,6 +231,8 @@ function Workspacemember(){
             .then(() => {
                 console.log("成員已成功刪除");
                 setQuitMemberId("");
+                setClickQuitModal(false);
+                navigate("/home");
             })
             .catch((error) => {
                 console.error("處理退出成員時發生錯誤：", error);
@@ -329,13 +382,13 @@ function Workspacemember(){
                     placeholder="職位"
                     selection
                     options={[
-                        { key: 'admin', text: '管理員', value: 'admin' },
-                        { key: 'member', text: '成員', value: 'member' },
+                        { key: 'admin', text: '管理員', value: '管理員' },
+                        { key: 'member', text: '人員', value: '人員' },
                     ]}
                     onChange={(event, data) => handlePositionChange( data.value)}
                     style={{ minWidth: '100px' }} // 設置最小寬度
                     />
-                <Button onClick={AddworkspaceMember}>修改</Button>          
+                <Button onClick={upDataMemberPosition}>修改</Button>          
                 </Modal.Description>
                 </Modal>
 

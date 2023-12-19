@@ -161,7 +161,7 @@ function CardViewArea(){
             <ul>
                 {upcomingCards.map((card) => (
                 <li key={card.cardId}>
-                    看板name：{card.canbanname}，卡片ID：{card.cardId}，名稱：{card.Cardname}
+                    看板name：{card.canbanname}，卡片名稱：{card.Cardname}
                 </li>
                 ))}
             </ul>

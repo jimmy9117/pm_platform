@@ -470,24 +470,25 @@ function Canbanpage() {
   function handleDragStart(event) {
     setIsDragging(true);
     const { active } = event;
-    console.log("拖曳開始");
+    
     const parts = active.id.split('-'); // ['card', '123456', 'list', '654321']
     const activeCardId = parts[1]; // 这是卡片ID '123456'
     const activeListId = parts[3]; // 这是列表ID '654321'
     const activeIndex = carddata.findIndex(card => card.id === activeCardId);
+    console.log("拖曳開始",activeIndex);
+    
     setDragStartIndex(activeIndex); 
     setDraggingCard({ cardId: activeCardId, targetListId: activeListId });
     //console.log("DragStartIndex:", dragStartIndex);
   }
 
-  useEffect(() => {
-    console.log("拖曳數值:",isDragging);
-  }, [isDragging]);
-  
+  // useEffect(() => {
+  //   console.log("拖曳數值:",isDragging);
+  // }, [isDragging]);
   function handleDragMove(event) {
     const { active, over } = event;
     if (!over) return;
-
+  
     // 获取卡片 ID 和 列表 ID
     const activeParts = active.id.split('-');
     const overParts = over.id.split('-');
@@ -496,42 +497,32 @@ function Canbanpage() {
     
     const overCardId = overParts[1];
     const overListId = overParts[3];
-  // console.log(" activeCardId:", activeCardId); 
-  //  console.log(" activeListId:", activeListId);
-  // console.log(" overCardId:", overCardId);
-  // console.log(" overListId:", overListId);
   
-  let overIndex;
-  const activeIndex = dragStartIndex; 
-
-  if (draggingCard) {
-    setDraggingCard(prev => ({ ...prev, targetListId: overListId }));
+    let overIndex;
+    const activeIndex = dragStartIndex; 
+  
+    if (draggingCard) {
+      setDraggingCard(prev => ({ ...prev, targetListId: overListId }));
+    }
+  
+    // useEffect(() => {
+    //   if (activeListId !== overListId) {
+    //     // 處理跨列表的邏輯
+    //     // overIndex = temporaryCardData.findIndex(card => card.id === overCardId);
+    //     // console.log("跨列表overIndex:", overIndex);
+    //   } else {
+    //     // 處理同列表的邏輯
+    //     overIndex = temporaryCardData.findIndex(card => card.id === overCardId);
+    //     console.log("拖曳中", overIndex);
+  
+    //     // 只有在 activeIndex 不等於 overIndex 時才進行陣列交換
+    //     if (activeIndex !== overIndex) {
+    //       setTemporaryCardData(prev => arrayMove(prev, activeIndex, overIndex));
+    //     }
+    //   }
+    // }, [temporaryCardData, activeIndex, overIndex, activeListId, overListId, overCardId]);
   }
   
-  
-
-  if ( activeListId !== overListId) {
-    overIndex = temporaryCardData.findIndex(card => card.id === overCardId);
-    console.log("跨列表overIndex:", overIndex);
-
-  } else {
-    // 如果是在相同列表中移动，找到overCardId的索引
-    overIndex = temporaryCardData.findIndex(card => card.id === overCardId);
-    console.log("同列表overIndex:", overIndex);
-    setTemporaryCardData(prev => {
-      return arrayMove(prev, activeIndex, overIndex);
-    });
-  }
-// if (activeIndex !== overIndex) {
-//       setTemporaryCardData(prev => {
-//         const updated = [...prev];
-//         const [removed] = updated.splice(activeIndex, 1);
-//         updated.splice(overIndex, 0, removed);
-//         return updated;
-//       });
-//     }
-  
-}
   
     // 拖曳結束處理
     function handleDragEnd(event) {
