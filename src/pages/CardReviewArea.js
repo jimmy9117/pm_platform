@@ -1,59 +1,63 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from 'react-router-dom';
-import { Grid, Button, Modal, Header, Container } from "semantic-ui-react";
-import { IoMdClose } from "react-icons/io";
-import { IoEyeSharp } from "react-icons/io5";
+import { useNavigate,useLocation } from 'react-router-dom';
+import { Grid, List,Divider,Button,Icon,Modal,Header, Form,Dropdown } from "semantic-ui-react";
+
 import firebase from "../utils/firebase";
 import "firebase/auth";
-import styles from "./CardReviewArea.module.css"
-import Canbanpage from "./Canbanpage";
-import SidebarExampleVisible from "./Siderbar";
+import Canbanpage from"./Canbanpage";
+import { BsChevronDown } from 'react-icons/bs'; // 這裡引入了 BsChevronDown
 
 
 //Ethers.js
 import contractABI from '../contracts/CompanySstorage.json';
 import { Web3Provider } from '@ethersproject/providers';
-import { Contract, ethers } from 'ethers';
+import { Contract ,ethers} from 'ethers';
 import { Interface, Log } from "ethers";
+import { BigNumber } from "@ethersproject/bignumber";
 
 
-function CardReviewArea() {
+
+
+
+function CardReviewArea(){
     const navigate = useNavigate();
-    const [canbandata, setcanbandata] = useState([]);
-    const [memberdata, setmemberdata] = useState([]);
+    const [canbandata,setcanbandata] = useState([]);
+    const [memberdata,setmemberdata] = useState([]);
     const user = firebase.auth().currentUser.uid;
     const location = useLocation();
     const workspaceId = location.state.data.workspaceId;
-    const [carddata, setCarddata] = useState([]);
+    const [carddata,setCarddata] = useState([]);
     const [selectedCardId, setSelectedCardId] = useState("");
     const [selectedCardMember, setSelectedCardMember] = useState([]);
-    const [openViewCard, setopenViewCard] = useState(false);
-    const [openCardConfirmModal, setOpenCardConfirmModal] = useState(false);
-    const [openCardReturnModal, setOpenCardReturnModal] = useState(false);
-
-
+    const [openViewCard,setopenViewCard] = useState(false);
+    const [openCardConfirmModal,setOpenCardConfirmModal] = useState(false);
+    const [openCardReturnModal,setOpenCardReturnModal] = useState(false);
+    const [openTransfermoney,setOpenTransfermoney] = useState(false);
+    const [intputamount,setIntputamount] = useState("");
+    
     // 初始化 ethers.js 和智能合约
-    const contractAddress = '0x6A9a9A0f134A547F4BE52234dCB742C202f918c4';
-    const provider = new Web3Provider(window.ethereum);
-    const signer = provider.getSigner();
-    const cardStorageContract = new Contract(contractAddress, contractABI, signer);
-    const contractInterface = new Interface(contractABI);
+  const contractAddress = '0x72D412898d2490f04f6F1F0c3BeF2e61455787e1';
+  const provider = new Web3Provider(window.ethereum);
+  const signer = provider.getSigner();
+  const cardStorageContract = new Contract(contractAddress, contractABI, signer);
+  const contractInterface = new Interface(contractABI);
+  const walletAddress = signer.getAddress();
+  provider.send("eth_accounts", []).then(accounts => {
+    // console.log(accounts);
+  });
+  
+    const [employeeInfo, setEmployeeInfo] = useState([]);
 
-    //測試 
-    //   const data = '0x726ab0b200000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000001000000000000000000000000315e95ad7e4e97aaa1e2f089f50b42f6b4abeeb6';
-    //   const iface = new ethers.utils.Interface(contractABI);
-    //   const decodedData = iface.parseTransaction({ data });
-    //   // 顯示解碼結果
-    //   console.log("測試上鏈直:",decodedData);
+  
 
     //點擊查看卡片
-    const handleClickViewCard = (cardid, member) => {
-        console.log("點擊查看cardid:", cardid);
-        console.log("點擊查看cardmember:", member);
+    const handleClickViewCard = (cardid,member) =>{
+        console.log("點擊查看cardid:",cardid);
+        console.log("點擊查看cardmember:",member);
         setopenViewCard(true);
         setSelectedCardId(cardid);
         setSelectedCardMember(member);
-
+     
     };
 
     // 抓取所有卡片
@@ -76,13 +80,12 @@ function CardReviewArea() {
                                 id: cardDoc.id,
                                 ...cardDoc.data()
                             }));
-                            
+
                             // 使用 Set 來確保每個卡片 ID 是唯一的
                             setCarddata((prevCardData) => {
                                 const uniqueCardData = new Set([...prevCardData, ...newCardData]);
                                 return Array.from(uniqueCardData);
                             });
-                            console.log(newCardData)
                         });
 
                         return () => unsubscribeCard();
@@ -100,27 +103,27 @@ function CardReviewArea() {
     //抓取卡片資料
     React.useEffect(() => {
         console.log("carddata 狀態變化:", carddata);
-    }, [carddata]);
+      }, [carddata]);
 
-
-    const test = () => {
-        console.log("workspaceid:", workspaceId);
+    const test =()=>{
+        console.log("workspaceid:",workspaceId);
         // 將工作區ID轉換為 bytes32
-        // 將工作區ID轉換為 bytes32
-        const workspaceKey = ethers.solidityPackedKeccak256(['string'], [workspaceId]);
-        console.log("未改變的數值:", workspaceId);
-        console.log("工作區ID轉換為bytes32:", workspaceKey);
+     // 將工作區ID轉換為 bytes32
+    const workspaceKey = ethers.solidityPackedKeccak256(['string'], [workspaceId]);
+    console.log("未改變的數值:", workspaceId);
+    console.log("工作區ID轉換為bytes32:", workspaceKey);
+    setOpenTransfermoney(true);
     };
-
+  
     // 將確認完成卡片上鏈和計算人員積分
     const handleCompleteCard = async () => {
         console.log("上鏈按鈕");
         console.log("SelectedCardMember:", selectedCardMember);
-        console.log("workspaceid:", workspaceId);
+        console.log("workspaceid:",workspaceId);
 
-
+       
         // 將卡片人員的地址陣列上鏈
-        const data = cardStorageContract.interface.encodeFunctionData('completeCard', [selectedCardMember, workspaceId]);
+        const data = cardStorageContract.interface.encodeFunctionData('completeCard', [selectedCardMember,workspaceId]);
 
         // 發送交易
         const tx = await signer.sendTransaction({
@@ -143,11 +146,9 @@ function CardReviewArea() {
     };
 
 
-    // 定義事件名稱和監聽器函式
+   // 上鏈人員資料監聽事件
     const eventName = 'CardCompleted';
     const eventFilter = cardStorageContract.filters[eventName]();
-
-    // 建立事件監聽器的回調函式
     const eventListener = (employeeAddress, workspace, points, event) => {
         console.log(`錢包地址: ${employeeAddress}, 工作區ID: ${workspace}, 積分: ${points}`);
     };
@@ -155,176 +156,240 @@ function CardReviewArea() {
     // 監聽事件
     cardStorageContract.on(eventName, eventListener);
 
-    // 等待 5 秒鐘再取消註冊事件
+   // 等待 5 秒鐘再取消註冊事件
     setTimeout(() => {
         cardStorageContract.off(eventName, eventListener);
-    }, 4000);
+    }, 7000);
 
+   // 人員積分資料監聽事件
+   const eventNameB = 'PercentageUpdated';
+   const eventFilterB = cardStorageContract.filters[eventNameB](); // 注意此處修正
+   const eventListenerB = (employeeAddress, workspace, points, percentage, test, event) => {
+       console.log(`錢包地址: ${employeeAddress}, 工作區ID: ${workspace}, 積分: ${points} 百分比: ${percentage}`);
+   };
+   
+   // 監聽事件
+   cardStorageContract.on(eventNameB, eventListenerB); // 注意此處修正
+   
+   // 等待 5 秒鐘再取消註冊事件
+   setTimeout(() => {
+       cardStorageContract.off(eventNameB, eventListenerB); // 注意此處修正
+   }, 7000);
+   
 
+  // 確認轉帳
+const handletransferfunction = () => {
+    console.log("轉帳金額:", intputamount);
+    console.log("employeeInfo:",employeeInfo);
+    // const aumonta = BigNumber.parse(intputamount, 18); // 转换为 wei，并确保小数点后至少有18位
 
-    // 定義一個非同步函式，它允許使用 await 運算式
-    async function fetchData() {
-        try {
-            // 調用 getEmployeePercentages 函式，並等待 Promise 完成
-            const result = await cardStorageContract.getEmployeePercentages(workspaceId);
-
-            // 解包 Proxy 對象中的陣列
-            const totalPoints = result[0];
-            const addresses = result[1].map(address => address.toString());
-            const percentages = result[2].map(percent => percent.toNumber());
-
-            // 在控制台上輸出結果
-            console.log("Total Points:", totalPoints);
-            console.log("Addresses:", addresses);
-            console.log("Percentages:", percentages);
-        } catch (error) {
-            // 處理錯誤
-            console.error("Error fetching data:", error);
-        }
+    // console.log("aumonta", aumonta);
+  
+    // // 轉帳
+    // const tx = cardStorageContract.transferFunds(workspaceId, aumonta);
+  
+    // // 等待交易被確認
+    // tx.then(receipt => {
+    //   console.log("交易成功");
+    // });
+  
+    setIntputamount("");
+    setOpenTransfermoney(false);
+  };
+  
+    //處理退出轉帳
+    const handleuittransferfunction =()=>{
+        setIntputamount("");
+        setOpenTransfermoney(false);
     }
 
-    // 調用 fetchData 函式
-    fetchData();
-
-
-    // 調用 fetchData 函式
-    fetchData();
-
-
-
-
-    // 總積分調用
-    async function callContract() {
+    const getAllEmployeeInfo = async () => {
         try {
-            const result = await cardStorageContract.testGetEmployeePercentages(workspaceId);
-            console.log("Result:", result);
-            // 处理返回的结果
-            const workspaceKey = result[0];
-            const totalPoints = result[1];
-
-            console.log('Workspace Key:', workspaceKey);
-            console.log('Total Points:', totalPoints);
+          const result = await cardStorageContract.getEmployeeInfoInWorkspace(workspaceId);
+          const [employeeAddresses, points, percentages] = result;
+    
+          const newEmployeeInfo = employeeAddresses.map((address, index) => ({
+            address,
+            points: Number(points[index]), // 轉換為 Number
+            percentage: Number(percentages[index]), // 轉換為 Number
+          }));
+    
+          setEmployeeInfo(newEmployeeInfo);
         } catch (error) {
-            console.error('Error calling contract function:', error);
+          console.error("Error fetching employee info:", error);
         }
+      };
+    // 設定定期獲取的時間間隔（毫秒為單位，這裡設定為一小時）
+    const intervalTime = 5000;
+
+   // 設定定期獲取的定時器
+    const intervalId = setInterval(() => {
+        getAllEmployeeInfo();
+    }, intervalTime);
+      // 等待 5 秒鐘再取消註冊事件
+
+//    setTimeout(() => {
+//        cardStorageContract.off(eventNameB, eventListenerB); // 注意此處修正
+//    }, 7000);
+
+  // 總積分調用
+async function callContract() {
+    try {
+      const result = await cardStorageContract.testGetEmployeePercentages(workspaceId);
+      console.log("Result:", result);
+      // 处理返回的结果
+      const workspaceKey = result[0];
+      const totalPoints = result[1];
+  
+      console.log('Workspace Key:', workspaceKey);
+      console.log('Total Points:', totalPoints);
+    } catch (error) {
+      console.error('Error calling contract function:', error);
     }
-    // 调用函数
-    //   callContract();
+  }
+   //callContract();
 
-    // 測試單獨一個人資料
-    async function fetchTestPercentage() {
-        try {
-            // 指定一個已知的人員地址
-            const testAddress = "0xdbE430Ab7b69E95948aF9a003341838FA937fcB4";
+  // 測試單獨一個人資料
+// async function fetchTestPercentage() {
+//     try {
+//         // 獲取所有已連接的錢包地址
+//         const accounts = await provider.send("eth_accounts", []);
 
-            // 調用 testCalculatePercentage 函式，並等待 Promise 完成
-            const result = await cardStorageContract.testCalculatePercentage(workspaceId, testAddress);
+//         const testAddress = accounts[0];
+//         console.log("testAddress123", testAddress);
+        
+//         // 調用 testCalculatePoints 函式，並等待 Promise 完成
+//         const result = await cardStorageContract.testCalculatePoints(workspaceId, testAddress);
 
-            // 將 Proxy 對象轉換為陣列
-            const workspaceKey = result[0];
-            const totalPoints = result[1];
-            const testPercentage = result[2];
+//         // 解構返回的結果
+//         const [workspaceKey, totalPoints, testPoints,testPercentages] = result;
 
-            // 在控制台上輸出結果
-            console.log("Workspace Key:", workspaceKey);
-            console.log("Total Points:", totalPoints);
-            console.log("Test Percentage:", testPercentage);
-        } catch (error) {
-            // 處理錯誤
-            console.error("Error fetching test percentage:", error);
-        }
-    }
-    // 調用 fetchTestPercentage 函式
-    //fetchTestPercentage();
+//         // 在控制台上輸出結果
+//         console.log("Workspace Key:", workspaceKey);
+//         console.log("Total Points:", totalPoints);
+//         console.log("points:", testPoints);
+//         console.log("Percentages:", testPercentages);
+        
+//     } catch (error) {
+//         // 處理錯誤
+//         console.error("Error fetching test percentage:", error);
+//     }
+// }
+
+// // 調用測試函式
+// fetchTestPercentage();
 
 
-    const overlay = (
-        <div>
-            <div className={styles.overlay} style={{ display: openViewCard ? 'block' : 'none' }} onClick={() => setopenViewCard(false)} />
-            <div className={styles.overlay} style={{ display: openCardConfirmModal ? 'block' : 'none' }} onClick={() => setOpenCardConfirmModal(false)} />
-            <div className={styles.overlay} style={{ display: openCardReturnModal ? 'block' : 'none' }} onClick={() => setOpenCardReturnModal(false)} />
-        </div>
-    );
+     
+    return <Grid style={{  }}>
+        {/* 預設切成16等份 */}
+        <Grid.Row>
+        <Grid.Column width={3}>左空白</Grid.Column>
+            <Grid.Column width={2}>
+                <List animated selection>
+                    <List.Item >
+                        看板
+                    </List.Item>
+                    <List.Item>
+                        成員
+                      
+                    </List.Item>
+                    <List.Item>
+                        首頁
+                    </List.Item>
+                    <Divider/>
+                </List>
+                <List >
+                    <List.Item>
+                      工作區 
+                    
+                    </List.Item>
+                </List>
 
-    return (
-        <Grid className={styles.grid}>
-            {overlay}
-            <Grid.Row className={styles.row}>
-                <SidebarExampleVisible />
-                <Container className={styles.allboard}>
-                    <Grid.Column className={styles.column}>
-                        <Container>
-                            <Header className={styles.headeritem}>待審核區</Header>
-                            <hr className={styles.hr} />
-                        </Container>
-                        <table className={styles.table}>
-                            <thead>
-                                <tr>
-                                    <th className={styles.thc}>卡片名稱</th>
-                                    <th className={styles.thw}>審查卡片</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {carddata.map((card) => (
-                                    <tr key={card.id}>
-                                        <td className={styles.tdc}>{card.Cardname}</td>
+            </Grid.Column>
 
-                                        <td className={styles.tdw}>
-                                            <Button className={styles.eyesbutton} onClick={() => handleClickViewCard(card.id, card.member)}><IoEyeSharp className={styles.eyesicon} /></Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-
-                        {/* 審核卡片畫面 */}
-                        <Modal className={styles.reviewmodal} onClose={() => setopenViewCard(false)} open={openViewCard}>
-                            {carddata.map((card) => (
-                                card.id === selectedCardId && (
-                                    <React.Fragment key={card.id}>
-                                        <Modal.Header className={styles.modalheader}>
-                                            審查卡片:{card.Cardname}
-                                            <Button className={styles.closebutton} onClick={() => setopenViewCard(false)}>
-                                                <IoMdClose className={styles.closeicon} />
-                                            </Button>
-                                        </Modal.Header>
-                                        <Modal.Description>
-                                            <Header className={styles.describeheader}>描述：</Header>
-                                                <p>{card.describe}</p>
-                                        </Modal.Description>
-                                        <Modal.Description>
-                                            <Button className={styles.lbutton} onClick={() => setOpenCardConfirmModal(true)}>通過</Button>
-                                            <Button className={styles.rbutton} onClick={() => setOpenCardReturnModal(true)}>退回</Button>
-                                        </Modal.Description>
-                                    </React.Fragment>
-                                )
-                            ))}
-                        </Modal>
-
-                        {/* 送出確認卡片 */}
-                        <Modal className={styles.sendoutmodal} onClose={() => setOpenCardConfirmModal(false)} open={openCardConfirmModal}>
-                            <Modal.Header className={styles.modalheader}>確認卡片通過嗎？</Modal.Header>
-                            <Modal.Description>
-                                <Button className={styles.lbutton} onClick={() => handleCompleteCard()}>確認</Button>
-                                <Button className={styles.rbutton} onClick={() => setOpenCardConfirmModal(false)}>再想想</Button>
-                            </Modal.Description >
-                        </Modal >
-
-                        {/* 退回卡片畫面 */}
-                        < Modal className={styles.returnmodal} onClose={() => setOpenCardReturnModal(false)} open={openCardReturnModal} >
-                            <Modal.Header className={styles.modalheader}>確認卡片退回嗎？</Modal.Header>
-                            <Modal.Description>
-                                <Button className={styles.lbutton}>確認</Button>
-                                <Button className={styles.rbutton} onClick={() => setOpenCardReturnModal(false)}>再想想</Button>
-                            </Modal.Description>
-                        </Modal >
-
-                    </Grid.Column >
-                    <Button className={styles.button} onClick={test}>測試</Button>
-                </Container >
-            </Grid.Row >
-        </Grid >
-    )
+            <Grid.Column width={8}>
+            <Header>待審核區</Header>
+                {carddata.map((card) => (
+                <div key={card.id}>
+                    <p>卡片名稱：{card.Cardname} 
+                        {/* 截止時間:{card.deadline} */}
+                        <Button onClick={() =>handleClickViewCard(card.id,card.member)}>查看</Button>
+                    </p>
+                    
+                </div>
+                
+                ))}
+                 <div>
+                {/* 在這裡使用 employeeInfo 狀態渲染前端畫面 */}
+                {employeeInfo.map((employee, index) => (
+                    <div key={index}>
+                    <p>Address: {employee.address}</p>
+                    <p>Points: {employee.points}</p>
+                    <p>Percentage: {employee.percentage/10}%</p>
+                    <hr />
+                    </div>
+                ))}
+                </div>
+                 {/* 審核卡片畫面 */}
+                <Modal  onClose={()=>setopenViewCard(false)} open={openViewCard}>
+                    {carddata.map((card)=>(
+                        card.id === selectedCardId && (
+                            <React.Fragment key={card.id}>
+                                <Modal.Header>
+                                    審查卡片:{card.Cardname}
+                                    <Button icon="close" onClick={() => setopenViewCard(false)}></Button>
+                                </Modal.Header>
+                                <Modal.Description>
+                                    <Header>描述</Header>
+                                </Modal.Description>
+                                <Modal.Description>
+                                <Button onClick={()=>setOpenCardConfirmModal(true)}>通過</Button>
+                                <Button onClick={()=>setOpenCardReturnModal(true)}>退回</Button>
+                                </Modal.Description>
+                            </React.Fragment>
+                        )
+                    ))}
+                </Modal> 
+                  {/* 送出確認卡片 */}
+                  <Modal size="mini" onClose={()=>setOpenCardConfirmModal(false)} open={openCardConfirmModal}>
+                    <Modal.Header>確認卡片通過嗎</Modal.Header>
+                    <Modal.Description>
+                    <Button onClick={()=>handleCompleteCard()}>確認</Button>
+                    <Button onClick={()=>setOpenCardConfirmModal(false)}>再想想</Button>
+                    </Modal.Description>
+                </Modal>
+                {/* 退回卡片畫面 */}
+                <Modal size="mini" onClose={()=>setOpenCardReturnModal(false)} open={openCardReturnModal}>
+                    <Modal.Header>確認卡片退回嗎</Modal.Header>
+                    <Modal.Description>
+                    <Button >確認</Button>
+                    <Button onClick={()=>setOpenCardReturnModal(false)}>再想想</Button>
+                    </Modal.Description>
+                </Modal>
+            </Grid.Column>
+            <Grid.Column width={3}>
+            <Button onClick={test}>更新</Button>
+            {/* <Modal size="mini" onClose={()=>setOpenTransfermoney(false)} open={openTransfermoney}>
+                    <Modal.Header>轉帳金額</Modal.Header>
+                    <Form.Input 
+                    label ="金額"
+                    placeholder="輸入金額" 
+                    value = {intputamount}
+                    onChange={(e) => setIntputamount(e.target.value)}
+                    /> 
+                    <Modal.Description>
+                    <Button onClick={handletransferfunction}>確認</Button>
+                    <Button onClick={handleuittransferfunction}>再想想</Button>
+                    </Modal.Description>
+                </Modal> */}
+            </Grid.Column>
+        </Grid.Row>
+        
+    </Grid>
+     {/* 完成 Modal */}
+   
+    
 }
 
 export default CardReviewArea;

@@ -58,6 +58,7 @@ function CardViewArea() {
     });
 
     //抓取看板
+<<<<<<< Updated upstream
     useEffect(() => {
         const fetchUpcomingCards = async () => {
             // Step 1: 獲取工作區的所有看板
@@ -96,6 +97,50 @@ function CardViewArea() {
 
         fetchUpcomingCards();
     }, [workspaceId]);
+=======
+    React.useEffect(() => {
+      const fetchUpcomingCards = async () => {
+        // Step 1: 獲取工作區的所有看板
+        const canbanQuery = firebase.firestore().collection('workspace').doc(workspaceId).collection('canban');
+        const canbanSnapshot = await canbanQuery.get();
+    
+        const upcomingCardsData = [];
+    
+        // Step 2: 使用看板ID獲取列表和卡片
+        for (const canbanDoc of canbanSnapshot.docs) {
+          const canbanId = canbanDoc.id;
+          console.log("看板id:", canbanId);
+          const listsQuery = firebase.firestore().collection('workspace').doc(workspaceId).collection('canban').doc(canbanId).collection('list');
+          const listsSnapshot = await listsQuery.get();
+    
+          for (const listDoc of listsSnapshot.docs) {
+            const listId = listDoc.id;
+    
+            const cardsQuery = firebase.firestore().collection('workspace').doc(workspaceId).collection('canban').doc(canbanId).collection('list').doc(listId).collection('card');
+            const cardsSnapshot = await cardsQuery.get();
+    
+            // Step 3: 過濾即將到期的卡片
+            cardsSnapshot.forEach(cardDoc => {
+              const cardData = cardDoc.data();
+              const isUpcoming = isCardUpcoming(cardData);
+              if (isUpcoming) {
+                upcomingCardsData.push({ canbanId, listId, cardId: cardDoc.id, ...cardData });
+              }
+            });
+          }
+        }
+    
+        // Step 5: 將結果設置到狀態中
+        setUpcomingCards(upcomingCardsData);
+      };
+    
+      // 在每次執行前清除先前的資料
+      setUpcomingCards([]); 
+    
+      fetchUpcomingCards();
+    }, []); 
+    
+>>>>>>> Stashed changes
 
     //判斷卡片deadline
     const isCardUpcoming = (card) => {
