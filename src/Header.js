@@ -1,24 +1,30 @@
 import React from "react";
-import { Menu, Popup,Search,Button,Sidebar } from "semantic-ui-react";
-import { Link } from "react-router-dom";
+import { Menu, Popup, Button, Segment, Modal, Image } from "semantic-ui-react";
+import { Link, useNavigate } from "react-router-dom";
 import firebase from "./utils/firebase";
-import { useNavigate } from "react-router-dom";
 // 從 ethers 的 providers 子模塊中導入 Web3Provider
 import { Web3Provider } from '@ethersproject/providers';
 import "firebase/auth";
+import { FaArrowRight } from "react-icons/fa";
+import { BsChevronDown } from 'react-icons/bs';
+import { FiSearch } from 'react-icons/fi';
+import { ImSpinner } from "react-icons/im";
+import styles from "./Header.module.css";
+import Meta from "./image/Metamask.jpg";
 
 
 function Header() {
   const [user, setUser] = React.useState("");
   const [walletAddress, setWalletAddress] = React.useState("");
   const [isLoadings, setIsLoadings] = React.useState(false);
-  const [visible, setVisible] = React.useState(false);
+  const [showWalletModal, setShowWalletModal] = React.useState(false);//錢包modal
   const navigate = useNavigate();
   const db = firebase.firestore();
 
+  const handleButtonClick = () => {
+    setShowWalletModal(true)
+  };
 
-  //連線選鑿
-  
   //連結錢包判斷
   const connect = async () => {
     if (typeof window.ethereum !== "undefined") {
@@ -44,11 +50,12 @@ function Header() {
         if (response.ok) {
           const customToken = await response.text();
           // 使用 customToken 進行後續操作
-          console.log("回傳後端生成錢包令牌:",customToken);
+          console.log("回傳後端生成錢包令牌:", customToken);
           // 在前端使用自定義令牌登入 Firebase
           try {
             await firebase.auth().signInWithCustomToken(customToken);
             console.log('用戶登入成功');
+            setShowWalletModal(false);
           } catch (error) {
             console.log('用戶登入失敗:', error);
           }
@@ -57,17 +64,18 @@ function Header() {
           setWalletAddress(walletAddress);
           await createUserdata();
           navigate("/home");
+          console.log("123", walletAddress);
         } else {
           setUser("");
           console.log('Error:', response.status);
         }
       } catch (error) {
-        setUser(""); 
-        console.log(error);
+        setUser("");
+        console.error("錢包連接錯誤:", error);
       }
     }
   };
-  
+
   //位首次使用用戶新增資料
   async function createUserdata() {
     if (user) {
@@ -78,8 +86,8 @@ function Header() {
       // 用戶尚未登入，處理第一次登入的情況
       console.log("用戶尚未登入");
       // 檢查是否已有以錢包地址作為 UID 的用戶資料
-      const  doucumentRef = await db.collection('userdata').where('author.uid', '==', walletAddress).get();
-  
+      const doucumentRef = await db.collection('userdata').where('author.uid', '==', walletAddress).get();
+
       if (doucumentRef.empty) {
         // 如果找不到對應的用戶資料，表示是第一次登入，則以錢包地址作為 UID 創建新用戶資料
         console.log("第一次登入，創建新用戶資料");
@@ -88,7 +96,7 @@ function Header() {
           name: "",
           email: "",
           createdAt: firebase.firestore.Timestamp.now(),
-          author: { 
+          author: {
             displayname: "",
             uid: walletAddress,
             email: "",
@@ -99,105 +107,128 @@ function Header() {
         // 找到對應的用戶資料，表示用戶已經登入過，直接使用該用戶的 UID 進行後續操作
         console.log("用戶已登入過，直接使用該用戶的 UID");
         const user = doucumentRef.docs[0].data();
-        console.log("User UID:", user.uid);
+        console.log(user.uid);
       }
     }
   }
-  
+
   const disconnect = async () => {
     try {
       await firebase.auth().signOut();
       setUser('');
       navigate("/");
-    } catch(error) {
-      console.log("登出失敗:",error);
+    } catch (error) {
+      console.log("登出失敗:", error);
     }
-    
+
   };
 
-  return ( 
-    <Menu>
-      <Menu.Menu position="left">
-        {user ? (
-          <>
-            <Menu.Item as={Link} to="/home">
-             pm_manager
-            </Menu.Item>
-            <Menu.Item as={Link} to="/SortableTest">拖曳測試</Menu.Item>
-            
-            <Menu.Item as={Link} >
-              <Popup
-                content={
-                  <Menu vertical>
-                    <Menu.Item>建立看板</Menu.Item>
-                    <Menu.Item>建立工作區</Menu.Item>
-                  </Menu>
-                }
-                on="click"
-                pinned
-                position="bottom left"
-                trigger={<span><Button>建立</Button></span>}
-              />
-            </Menu.Item>
-            
-          </>
-        ) : (
-          <>
-            <Menu.Item as={Link} to="/">
-             pm_manager
-            </Menu.Item>
-            <Menu.Item>特徵</Menu.Item>
-            <Menu.Item>計畫</Menu.Item>
-          </>
-        )}
-      </Menu.Menu>
-      <Menu.Menu position="right">
-        {user ? (
-          <>
-            <Menu.Item>
-              <Search />
-            </Menu.Item>
-            <Menu.Item as={Link} to="/MySettings">
-              人員
-            </Menu.Item>
+  return (
+    <Segment inverted className={styles.segment}>
+      <div className={styles.overlay1} style={{ display: showWalletModal ? 'block' : 'none' }} onClick={() => setShowWalletModal(false)} />
+      <Menu className={styles.menu}>
+        <Menu.Menu className={styles.leftmenu}>
+          {user ? (
+            <>
+              <Menu.Item className={styles.leftitem} as={Link} to="/home">
+                Home
+              </Menu.Item>
+              <Menu.Item className={styles.leftitem} as={Link} to="/SortableTest">拖曳測試<BsChevronDown className={styles.icon} /></Menu.Item>
+              <Menu.Item className={styles.popupitem} >
+                <Popup className={styles.leftpopup}
+                  content={
+                    <Menu vertical className={styles.lvertical}>
+                      <Menu.Item className={styles.verticalitem1}>建立看板</Menu.Item>
+                      <Menu.Item className={styles.verticalitem2}>建立工作區</Menu.Item>
+                    </Menu>
+                  }
+                  on="click"
+                  pinned
+                  position="bottom left"
+                  trigger={
+                    <span>
+                      <Button className={styles.lbutton} >建立</Button>
+                    </span>
+                  }
+                />
+              </Menu.Item>
 
-            <Menu.Item >
-              <Popup
-                content={
-                  <Menu vertical>
-                     <Menu.Item onClick={disconnect}>中断钱包连接</Menu.Item>
-                  </Menu>
-                }
-                on="click"
-                pinned
-                position="bottom left"
-                trigger={
-                  <span
-                  style={{
-                    maxWidth: '100px',
-                    paddingRight: '10px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
-                    {user}
-                  </span>
-                }
-              />
-            </Menu.Item>
+            </>
+          ) : (
+            <>
+              <Menu.Item className={styles.leftitem} as={Link} to="/">
+                Home
+              </Menu.Item>
+              <Menu.Item className={styles.leftitem} >特徵</Menu.Item>
+              <Menu.Item className={styles.leftitem} >計畫</Menu.Item>
+            </>
+          )}
+        </Menu.Menu>
+        <Menu.Menu className={styles.rightmenu} >
+          {user ? (
+            <>
+              <Menu.Item className={styles.wrapitem}>
+                <div className={styles.search}>
+                  <input className={styles.searchTerm} />
+                  <button className={styles.searchButton}>
+                    <FiSearch></FiSearch>
+                  </button>
+                </div>
+              </Menu.Item>
+              <Menu.Item className={styles.rightitem} as={Link} to="/MySettings">
+                人員
+              </Menu.Item>
 
-            {/* <Menu.Item onClick={() => firebase.auth().signOut()}>
-              登出
-            </Menu.Item> */}
-          </>
-        ) : (
-          <Button onClick={connect} loading={isLoadings} style={{ fontWeight: 'bold' }}>
-            Connect Wallet
+              <Menu.Item className={styles.rightitem} >
+                <Popup className={styles.rightpopup}
+                  content={
+                    <Menu vertica className={styles.rvertical}>
+                      <Menu.Item className={styles.verticalitem1} onClick={disconnect}>中斷錢包連結</Menu.Item>
+                    </Menu>
+                  }
+                  on="click"
+                  pinned
+                  position="bottom right"
+                  trigger={
+                    <span
+                      style={{
+                        maxWidth: '100px',
+                        paddingRight: '10px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                      {user}
+                    </span>
+                  }
+                />
+              </Menu.Item>
+            </>
+          ) : (
+            <Button className={styles.rbutton} onClick={handleButtonClick} style={{ fontWeight: 'bold' }}>
+              Connect Wallet
+            </Button>
+          )}
+        </Menu.Menu>
+      </Menu>
+
+      {/* 錢包選擇 */}
+      <Modal className={styles.modal} onClose={() => setShowWalletModal(false)} open={showWalletModal}>
+        <Modal.Header className={styles.modalHeader}>Connect Wallet</Modal.Header>
+        <Modal.Content className={styles.connect}>
+          {/* 在這裡添加用戶選擇錢包的選項，並處理相應的登入邏輯 */}
+          <Button
+            className={`${styles.modalbutton} ${isLoadings ? styles.loading : ''}`}
+            onClick={connect}
+            loading={isLoadings}
+          >
+            <Image className={styles.image} src={Meta} avatar />
+            {isLoadings ? <ImSpinner className={styles.spinner} /> : 'MetaMask'}
+            <FaArrowRight className={styles.arrowright} />
           </Button>
-        )}
-
-      </Menu.Menu> 
-    </Menu>
+        </Modal.Content>
+      </Modal>
+    </Segment >
   );
 }
 

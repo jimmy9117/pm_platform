@@ -1,4 +1,5 @@
-import { Header , Button , Segment , Modal , Input} from "semantic-ui-react";
+import { Header , Button , Segment , Modal , Input, Grid} from "semantic-ui-react";
+import styles from "./MySettings.module.css";
 import React from "react";
 import firebase from "../utils/firebase";
 
@@ -26,7 +27,8 @@ function Myname() {
 
   return(
     <>
-      <Header size="small">
+      <Grid className={styles.grid}>
+      <Header  size="small">
         會員名稱
         <Button floated="right" onClick={()=>setIsModalOpen(true)}>
           修改
@@ -47,11 +49,9 @@ function Myname() {
           <Button onClick={onsubmit} loading={isLoading}>修改</Button>
         </Modal.Actions>
       </Modal>
+      </Grid>
     </>
   );
-    
-  
-  
 }
 function MySettings(){
   const user = firebase.auth().currentUser || {};

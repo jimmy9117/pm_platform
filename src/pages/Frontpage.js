@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { Grid, List,Divider,Button,Icon,Modal,Header, Form} from "semantic-ui-react";
-import { useNavigate } from "react-router-dom";
+import React from "react";
+import "./Frontpage.module.css";
+
 function Frontpage(){
     return (
        
           <div>
-            <h2>
+            <h2 contentEditable="true">
               介紹首頁
             </h2>
           </div>

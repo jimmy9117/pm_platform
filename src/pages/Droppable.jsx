@@ -7,7 +7,10 @@ export function Droppable(props) {
     id: props.id,
   });
   const style = {
-    background: isOver ? 'lightblue' : 'white',
+    background: isOver ? 'lightblue' : '',
+    position: 'relative',
+    zIndex: 100,
+    borderRadius: '8px',
   };
 
   return (

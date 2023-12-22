@@ -1,23 +1,28 @@
 import React from "react";
-import { Menu, Popup,Search,Button,Sidebar,Icon} from "semantic-ui-react";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
-import { hasFormSubmit } from "@testing-library/user-event/dist/utils";
+import { Menu, Button, Container } from "semantic-ui-react";
+import { BsChevronRight } from "react-icons/bs";
+import styles from './CanbanHeader.module.css';
 
 
-function CanbanHeader(props){
-   
-    return(
+function CanbanHeader(props) {
+
+    
+
+    return (
         <Menu>
-            <Button onClick={props.handleIconClick}>
-                <Icon name="angle double right" size="large"/>
-            </Button>
-           
+            <Container className={styles.sbcontainer}>
+                <div className={styles.div}>
+                    <Button className={`${styles.sidebarbutton} ${props.isActive ? styles.active : ''}`} onClick={props.handleIconClick}>
+                        <BsChevronRight className={`${styles.sidebaricon} ${props.isActive ? styles.rotate : ''}`} />
+                    </Button>
+                </div>
+            </Container>
+
             <Menu.Menu position="left">
-             
-               
-                <Menu.Item>
-                  團隊名稱
+
+
+                <Menu.Item className={styles.teamname}>
+                    {props.canbanname}
                 </Menu.Item>
 
 
