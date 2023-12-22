@@ -1,0 +1,15 @@
+* {
+    /* color: #172b4d; */
+    font-size: 20px; /*有改*/
+    font-weight: 400;
+    line-height: 20px;
+    font-family: arial;
+}
+
+body {
+    background-size: 100%;
+    background-position: 50% 50%;
+    background-repeat: repeat-x;
+    background-image: url("C:\Users\88690\Desktop\pm_manager\report\src\image\OIG2.jpg");
+    /* background: linear-gradient(to bottom right , #c2bcbc, #b3b3b3); */
+}

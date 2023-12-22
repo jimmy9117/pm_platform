@@ -1,8 +1,6 @@
 // 整個網頁應用程式地進入點
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import 'semantic-ui-css/semantic.min.css'
-import './index.css';
 //import App元件進來
 import App from './App';
 import reportWebVitals from './reportWebVitals';
@@ -11,7 +9,7 @@ import reportWebVitals from './reportWebVitals';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+      <App />
   </React.StrictMode>
 );
 
